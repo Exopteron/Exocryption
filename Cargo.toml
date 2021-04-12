@@ -1,5 +1,5 @@
 [package]
-name = "Exocryption"
+name = "exocryption"
 version = "0.0.1"
 authors = ["exo"]
 edition = "2018"
@@ -13,3 +13,4 @@ data-encoding = "^2.3.2"
 rand = "^0.6.0"
 serde_json = "^1.0.59"
 serde = { version = "1.0", features = ["derive"] }
+getopts = "0.2.21"

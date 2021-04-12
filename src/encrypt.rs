@@ -1,6 +1,6 @@
 extern crate crypto;
 extern crate rand;
-use std::io;
+//use std::io;
 use std::str;
 use rand::Rng;
 use serde::Serialize;
@@ -14,14 +14,15 @@ use std::fs::File;
 use std::io::Read;
 
 
-pub fn main() {
+pub fn main(verbose: bool,keyfilename: String, msg: String) {
     #[derive(Serialize, Deserialize)]
     struct Key {
         key: String,
         macsecret: String
     }
-    let mut input = String::new();
-    let mut fileduo = File::open("key.json").unwrap();
+    //let verbose = false;
+    let mut input;
+    let mut fileduo = File::open(keyfilename).unwrap();
     let mut buffduo = String::new();
     fileduo.read_to_string(&mut buffduo).unwrap();
     let keyer: Key = serde_json::from_str(&buffduo).unwrap();
@@ -49,18 +50,20 @@ pub fn main() {
         input.push_str(&(f[i] as char).to_string());
     }
     let mut inkey = sha3_256(input.trim()).to_owned();
-    let mut macsecret = String::new();
+    let macsecret;
     /*println!("MAC Secret?");
     io::stdin()
     .read_line(&mut macsecret)
     .expect("Failed to read line");
     macsecret = macsecret.trim().to_string();
     */ macsecret = keyer.macsecret;
+    /*
     let mut msg = String::new();
     println!("Message?");
     io::stdin()
     .read_line(&mut msg)
     .expect("Failed to read line");
+    */
 
 
 
@@ -103,8 +106,8 @@ pub fn main() {
         }
         */
     
-    let mut keybyte = false;
-    let mut msgbyte = false;
+    let mut keybyte;
+    let mut msgbyte;
     let mut ciphertext = "".to_owned();
     for ib in 0..key.chars().count() {
     for i in 0..8 {
@@ -123,9 +126,11 @@ pub fn main() {
     
     }
 }
+if verbose == true {
+    println!("Ciphertext: {}",ciphertext);
+    println!("IV: {}",iv);
+}
 
-println!("Ciphertext: {}",ciphertext);
-println!("IV: {}",iv);
 let mut mac = "".to_owned();
 let innermacsecret = sha3_512(&sha3_256(&macsecret));
 let outermacsecret = sha3_512(&sha3_256(&sha3_224(&macsecret)));
@@ -151,8 +156,11 @@ verification.push_str(&mac);
 verification = sha3_256(&verification);
 verification = String::from(verification);
 verification.truncate(8);
-println!("Unique message ID: {:?}",verification);
-println!("MAC: {}",mac);
+if verbose {
+    println!("Unique message ID: {:?}",verification);
+    println!("MAC: {}",mac);
+}
+
 #[derive(Serialize, Deserialize)]
 struct Messagein {
     messageid: String,
@@ -163,7 +171,6 @@ struct Messagein {
 
 let fileout: Messagein = { Messagein {messageid: verification,iv: iv, mac: mac, cipherbytes: ciphertext}};
 let json = serde_json::to_string_pretty(&fileout).unwrap();
-println!("\n \n \n Give to recipient: \n");
 println!("{}",json);
 }
 
@@ -183,7 +190,7 @@ fn xor(keybyte: bool, msgbyte: bool) -> u8 {
 // Convert to bytes
 
 fn tobytes(msg: &str) -> Vec<String> {
-    let mut var = "".to_owned();
+    let mut var;
     let mut out = vec!["a".to_owned(); msg.chars().count()];
     for i in 0..msg.chars().count() {
     let a: u8 = msg.chars().nth(i).unwrap() as u8;

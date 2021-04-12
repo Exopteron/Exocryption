@@ -1,5 +1,5 @@
 extern crate crypto;
-use std::io;
+//use std::io;
 use crypto::scrypt::ScryptParams;
 use self::crypto::digest::Digest;
 use self::crypto::sha3::Sha3;
@@ -8,14 +8,12 @@ use serde::Deserialize;
 use std::convert::TryInto;
 extern crate serde;
 extern crate serde_json;
-use std::io::prelude::*;
-use std::net::TcpListener;
-use std::net::TcpStream;
+//use std::io::prelude::*;
 //#[macro_use] extern crate json_derive;
 use std::fs::File;
 use std::io::Read;
 
-pub fn main() {
+pub fn main(verbose: bool,keyfilename: String, mut inputout: String) {
     #[derive(Serialize, Deserialize)]
     struct Messagein {
         iv: String,
@@ -28,29 +26,32 @@ pub fn main() {
         key: String,
         macsecret: String
     }
-
+/*
     println!("File name?");
     let mut inputout = String::new();
     io::stdin()
         .read_line(&mut inputout)
         .expect("Failed to read line");
+        */
      inputout = inputout.trim().to_string();
+     //println!("{:?}",inputout);
     let mut file = File::open(inputout).unwrap();
     let mut buff = String::new();
     file.read_to_string(&mut buff).unwrap();
 
-    
-    println!("{}",buff);
+    if verbose {
+        println!("{}",buff);
+    }
     let message: Messagein = serde_json::from_str(&buff).unwrap();
     
-    let mut fileduo = File::open("key.json").unwrap();
+    let mut fileduo = File::open(keyfilename).unwrap();
     let mut buffduo = String::new();
     fileduo.read_to_string(&mut buffduo).unwrap();
     let keyer: Key = serde_json::from_str(&buffduo).unwrap();
    
 
  let mut input = keyer.key;
- let mut macsecret = keyer.macsecret;
+ let macsecret = keyer.macsecret;
 
     
     let mut f = vec![0; 24];
@@ -63,7 +64,7 @@ pub fn main() {
         .read_line(&mut iv)
         .expect("Failed to read line");
      iv = iv.trim().to_string();
-     */ let mut iv = message.iv;
+     */ let iv = message.iv;
 /*
      println!("MAC?");
      let mut mac = String::new();
@@ -73,13 +74,12 @@ pub fn main() {
       mac = mac.trim().to_string();
 
       */
-      let mut cipherbytes = String::new();
-      let mut cipherbytes = message.cipherbytes;
-      let mut originalmac = message.mac;
+      let cipherbytes = message.cipherbytes;
+      let originalmac = message.mac;
      
       let mut mac = "".to_owned();
-      let mut innermacsecret = sha3_512(&sha3_256(&macsecret));
-      let mut outermacsecret = sha3_512(&sha3_256(&sha3_224(&macsecret)));
+      let innermacsecret = sha3_512(&sha3_256(&macsecret));
+      let outermacsecret = sha3_512(&sha3_256(&sha3_224(&macsecret)));
       mac.push_str(cipherbytes.trim());
       mac.push_str(iv.trim());
       mac.push_str(macsecret.trim());
@@ -131,32 +131,36 @@ println!("Unique message ID: {:?}",verification);
         counter = counter + 1;
     }
     
-    let mut keybytes = tobytes(&key);
+    let keybytes = tobytes(&key);
+    if verbose {    
     println!("Key bytes: {}",keybytes);
     println!("Cipher bytes: {}",cipherbytes);
+    }
 
     let mut output = "".to_owned();
-    let mut msgbyte = false;
-    let mut keybyte = false;
+    let mut keybyte;
+    let mut msgbyte;
     for i in 0..key.chars().count() * 8 {
         if keybytes.chars().nth(i).unwrap() == '0' {
-            keybyte = false
+           keybyte = false;
         } else {
-            keybyte = true;
+           keybyte = true;
         }
         if cipherbytes.chars().nth(i).unwrap() == '0' {
-            msgbyte = false
+            msgbyte = false;
         } else {
             msgbyte = true;
         }
     output.push_str(&xor(keybyte, msgbyte).to_string());
     }
+    if verbose {
     println!("Output: {}",output);
+    }
 
     let mut veccer: Vec<String> = vec!["".to_string(); output.chars().count()];
     let mut inter = "".to_owned();
-    let mut iter = 0;
-    let mut sel = 0;
+    //let mut iter = 0;
+    //let mut sel = 0;
     let mut current = 0;
 
     let mut finale = "".to_owned();
@@ -198,14 +202,14 @@ fn xor(keybyte: bool, msgbyte: bool) -> u8 {
 
 
 fn tobytes(msg: &str) -> String {
-    let mut var = "".to_owned();
+    let mut var;
     let mut out = "".to_owned();
     
     for i in 0..msg.chars().count() {
     let a: u8 = msg.chars().nth(i).unwrap() as u8;
     var = format!("{:b}", a).trim().to_owned();
     var = var.chars().rev().collect::<String>();
-    for g in 0..8 - var.chars().count() {
+    for _g in 0..8 - var.chars().count() {
         if var.chars().count() < 8 {
             var.push_str("0");
         }
