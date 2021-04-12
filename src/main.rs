@@ -38,20 +38,24 @@ fn main() {
         mode = "decrypt";
     }
     let keyfile = matches.opt_str("k");
+    /*
     let _input1 = if !matches.free.is_empty() {
         matches.free[0].clone()
     } else {
-        println!("h");
+        println!("Key error");
         return;
     };
+    */
 
     let textin = matches.opt_str("t");
+    /*
     let _input2 = if !matches.free.is_empty() {
-        //matches.free[0].clone();
+        matches.free[0].clone();
     } else {
-        println!("t");
+        println!("Text error");
         return;
     };
+    */
 
    // let keyfile = "key.json"; //&args[2];
     if mode == "e" || mode == "encrypt" {
