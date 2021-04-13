@@ -3,6 +3,7 @@ extern crate rand;
 //use std::io;
 use std::str;
 use rand::Rng;
+use std::iter::FromIterator;
 use serde::Serialize;
 use serde::Deserialize;
 use self::crypto::digest::Digest;
@@ -69,25 +70,70 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
 
     
     let msgbytes = tobytes(&msg);
-    let unwrappedmsgbytes: String = msgbytes.into_iter().collect();
+    let mut unwrappedmsgbytes: String = msgbytes.into_iter().collect();
     println!("Debug 3 {}",unwrappedmsgbytes);
     let mut finalized = "".to_owned();
     let mut msgbytes = vec!["".to_owned(); unwrappedmsgbytes.chars().count() / 8];
     let mut startpoint = 0;
+    let mut supermsgbytes = "".to_owned();
+    let mut padding = sha3_224(&rand::thread_rng().gen_range(1, 100001).to_string());
+    let mut padding = tobytes(&padding);
+    let paddinglen = rand::thread_rng().gen_range(8, 16);
 
+    for i in 0..paddinglen {
+        unwrappedmsgbytes.push_str(&padding[i]);
+    }
+
+    println!("Padding length: {}",paddinglen);
+    let paddinglenbyte = format!("{:b}", paddinglen).trim().to_owned();
+    let mut paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
+    for _g in 0..8 - paddinglenbyte.chars().count() {
+        if paddinglenbyte.chars().count() < 8 {
+            paddinglenbyte.push_str("0");
+        }
+    }
+    let paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
+    println!("As a byte: {}",paddinglenbyte);
+/*
+    var = var.chars().rev().collect::<String>();
+    for _g in 0..8 - var.chars().count() {
+        if var.chars().count() < 8 {
+            var.push_str("0");
+        }
+    }
+
+    out[i] = var.chars().rev().collect::<String>();
+*/
+    unwrappedmsgbytes.push_str(&paddinglenbyte.to_string());
+
+
+    for i in 0..unwrappedmsgbytes.chars().count() {
+        if i % 8 == 0 && i != 0 {
+            supermsgbytes.push_str(" ");
+        }
+        supermsgbytes.push_str(&unwrappedmsgbytes.chars().nth(i).unwrap().to_string());
+
+    }
+    println!("{}",supermsgbytes);
+    let msgbytes = Vec::from_iter(supermsgbytes.split(" ").map(String::from));
+
+    /*
     for i in 0..unwrappedmsgbytes.chars().count() / 8 {
         for j in startpoint..(startpoint + 8) {
-            //println!("debug 1 billion {}",unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
-            finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
-            if j % 7 == 0 && j != 0 {
+            if j % 8 == 0 && j != 0 {
                 println!("debug like 20000 bruh {}",finalized);
                 finalized = "".to_owned();
                 startpoint = startpoint + 8;
                 break
             }
+          //  println!("debug 1 billion {}",j);
+            println!("debug 12 billion {} {}",j,unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
+            finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
+
         }
     }
 
+    */
 
 
 
@@ -109,17 +155,14 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
             
     }
     */
-    for i in 0..msgbytes.len() {
-        println!("DEBUG 5 {:?}",msgbytes[i]);
-    }
     
 
 
     let mut key = "".trim().to_owned();
     let mut counter = 0;
-    for i in 0..msg.chars().count() {
+    for i in 0..unwrappedmsgbytes.chars().count() / 8 {
         if counter == inkey.chars().count() {
-            if msg.chars().count() - key.chars().count() > 0 {
+            if unwrappedmsgbytes.chars().count() / 8 - key.chars().count() > 0 {
                 inkey.push_str(&sha3_256(&inkey));
             
             }
@@ -170,6 +213,9 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     }
 }
 if verbose == true {
+    for i in 0..msgbytes.len() {
+        println!("Original: {}",msgbytes[i]);
+    }
     println!("Ciphertext: {}",ciphertext);
     println!("IV: {}",iv);
 }

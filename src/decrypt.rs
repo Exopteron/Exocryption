@@ -156,6 +156,16 @@ println!("Unique message ID: {:?}",verification);
     if verbose {
     println!("Output: {}",output);
     }
+    let padlength = output.clone();
+    let padlength = padlength.chars().rev().collect::<String>();
+    let padlength: String = padlength.chars().take(8).collect();
+    let padlength = padlength.chars().rev().collect::<String>();
+    let padlength: u8 = isize::from_str_radix(&padlength, 2).unwrap().try_into().unwrap();
+    println!("Padding length: {}",padlength);
+
+    for i in 0..(padlength * 8) + 8 {
+        output.pop();
+    }
 
     let mut veccer: Vec<String> = vec!["".to_string(); output.chars().count()];
     let mut inter = "".to_owned();
