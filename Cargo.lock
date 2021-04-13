@@ -33,7 +33,6 @@ version = "0.0.1"
 dependencies = [
  "data-encoding",
  "getopts",
- "hex",
  "rand 0.6.5",
  "rust-crypto",
  "serde",
@@ -60,12 +59,6 @@ checksum = "14dbbfd5c71d70241ecf9e6f13737f7b5ce823821063188d7e46c41d371eebd5"
 dependencies = [
  "unicode-width",
 ]
-
-[[package]]
-name = "hex"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "itoa"
