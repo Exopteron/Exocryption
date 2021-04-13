@@ -70,17 +70,47 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     
     let msgbytes = tobytes(&msg);
     let unwrappedmsgbytes: String = msgbytes.into_iter().collect();
+    println!("Debug 3 {}",unwrappedmsgbytes);
     let mut finalized = "".to_owned();
-    let mut msgbytes = vec!["a".to_owned(); msg.chars().count()];
+    let mut msgbytes = vec!["".to_owned(); unwrappedmsgbytes.chars().count() / 8];
     let mut startpoint = 0;
+
     for i in 0..unwrappedmsgbytes.chars().count() / 8 {
         for j in startpoint..(startpoint + 8) {
+            //println!("debug 1 billion {}",unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
+            finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
+            if j % 7 == 0 && j != 0 {
+                println!("debug like 20000 bruh {}",finalized);
+                finalized = "".to_owned();
+                startpoint = startpoint + 8;
+                break
+            }
+        }
+    }
+
+
+
+
+
+/*
+
+    for i in 0..unwrappedmsgbytes.chars().count() / 8 {
+        println!("{} {} DEbug2",unwrappedmsgbytes.chars().count(), msgbytes.len());
+        for j in startpoint..(startpoint + 8) {
                 finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
-                if j == 7 {
+                println!("Debug 4 {}",j);
+                if j % 7 == 0 {
+                    startpoint = startpoint + 8;
                     msgbytes[i] = finalized;
                     finalized = "".to_owned();
                 }
-        }
+            }
+
+            
+    }
+    */
+    for i in 0..msgbytes.len() {
+        println!("DEBUG 5 {:?}",msgbytes[i]);
     }
     
 
@@ -121,8 +151,9 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     let mut keybyte;
     let mut msgbyte;
     let mut ciphertext = "".to_owned();
-    for ib in 0..unwrappedmsgbytes.chars().count() / 8 {
+    for ib in 0..(unwrappedmsgbytes.chars().count() / 8) {
     for i in 0..8 {
+        println!("Debug: {} {}",msgbytes[ib],msgbytes[ib].chars().nth(1).unwrap());
         if msgbytes[ib].chars().nth(i).unwrap() == '0' {
             msgbyte = false;
         } else {
