@@ -69,7 +69,6 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
 
     
     let msgbytes = tobytes(&msg);
-
     
 
 
