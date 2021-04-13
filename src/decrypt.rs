@@ -24,7 +24,8 @@ pub fn main(verbose: bool,keyfilename: String, mut inputout: String) {
     #[derive(Serialize, Deserialize)]
     struct Key {
         key: String,
-        macsecret: String
+        macsecret: String,
+        pfssecret: String
     }
 /*
     println!("File name?");
@@ -52,6 +53,7 @@ pub fn main(verbose: bool,keyfilename: String, mut inputout: String) {
 
  let mut input = keyer.key;
  let macsecret = keyer.macsecret;
+ let pfssecret = keyer.pfssecret;
 
     
     let mut f = vec![0; 24];
@@ -120,6 +122,7 @@ println!("Unique message ID: {:?}",verification);
     for i in 0..cipherbytes.chars().count() / 8 {
         if counter == inkey.chars().count() {
             if cipherbytes.chars().count() / 8 - key.chars().count() > 0 {
+                inkey.push_str(&pfssecret);
                 inkey.push_str(&sha3_256(&inkey));
            
                 
@@ -166,7 +169,7 @@ println!("Unique message ID: {:?}",verification);
     }   
    
 
-    for i in 0..(padlength * 8) + 8 {
+    for _i in 0..(padlength * 8) + 8 {
         output.pop();
     }
 
@@ -174,13 +177,13 @@ println!("Unique message ID: {:?}",verification);
     let padlengthr = padlengthr.chars().rev().collect::<String>();
     let padlengthr: String = padlengthr.chars().take(8).collect();
     let padlengthr = padlengthr.chars().rev().collect::<String>();
-    let padlengthr: u8 = isize::from_str_radix(&padlengthr.chars().rev().collect::<String>(), 2).unwrap().try_into().unwrap();
+    let padlengthr: usize = isize::from_str_radix(&padlengthr.chars().rev().collect::<String>(), 2).unwrap().try_into().unwrap();
     if verbose {
     println!("padding length reversed: {}",padlengthr);
     }
 
     output = output.chars().rev().collect::<String>();
-    for i in 0..(padlengthr * 8) + 8 {
+    for _i in 0..(padlengthr * 8) + 8 {
         output.pop();
     }
     output = output.chars().rev().collect::<String>();

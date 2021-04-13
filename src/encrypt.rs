@@ -19,7 +19,8 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     #[derive(Serialize, Deserialize)]
     struct Key {
         key: String,
-        macsecret: String
+        macsecret: String,
+        pfssecret: String
     }
     //let verbose = false;
     let mut input;
@@ -34,6 +35,7 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
         .expect("Failed to read line");
     input = input.trim().to_string();
     */ input = keyer.key;
+    let pfssecret = keyer.pfssecret;
     //let graphuck = input.to_owned();
     let mut f = vec![0; 24];
     let params = ScryptParams::new(10,8,1);
@@ -71,15 +73,18 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     
     let msgbytes = tobytes(&msg);
     let mut unwrappedmsgbytes: String = msgbytes.into_iter().collect();
-    let mut finalized = "".to_owned();
-    let mut msgbytes = vec!["".to_owned(); unwrappedmsgbytes.chars().count() / 8];
-    let mut startpoint = 0;
+   // let mut finalized = "".to_owned();
+    //let mut msgbytes = vec!["".to_owned(); unwrappedmsgbytes.chars().count() / 8];
+    //let mut startpoint = 0;
     let mut supermsgbytes = "".to_owned();
     let mut padding = sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string());
     padding.push_str(&sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string()));
-    let mut padding = tobytes(&padding);
-    let paddinglen = rand::thread_rng().gen_range(0, 128);
-
+    let padding = tobytes(&padding);
+    let umbclone = unwrappedmsgbytes.clone();
+    println!("Debug: {}",umbclone.chars().count() / 8);
+    let paddinglen = rand::thread_rng().gen_range(0, 128 - (umbclone.chars().count() / 8));
+    let otherpaddinglen = (128 - (umbclone.chars().count() / 8)) - paddinglen;
+    println!("Debug 2: {} {}",paddinglen,otherpaddinglen);
     for i in 0..paddinglen {
         unwrappedmsgbytes.push_str(&padding[i]);
     }
@@ -109,7 +114,7 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     unwrappedmsgbytes.push_str(&paddinglenbyte.to_string());
 
     let mut unwrappedmsgbytes = unwrappedmsgbytes.chars().rev().collect::<String>();
-    let paddinglen = rand::thread_rng().gen_range(0, 128);
+    let paddinglen = otherpaddinglen;
 
     for i in 0..paddinglen {
         unwrappedmsgbytes.push_str(&padding[i]);
@@ -184,6 +189,7 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     for i in 0..unwrappedmsgbytes.chars().count() / 8 {
         if counter == inkey.chars().count() {
             if unwrappedmsgbytes.chars().count() / 8 - key.chars().count() > 0 {
+                inkey.push_str(&pfssecret);
                 inkey.push_str(&sha3_256(&inkey));
             
             }
