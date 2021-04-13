@@ -1,6 +1,6 @@
 {
-  "messageid": "2c5cd912",
-  "iv": "ddb0653330dda4be74833d9e5e1cfc3a3ee83a689576b6ff61a1825c",
-  "mac": "7c7560c26102c83f98bf75a26aa7f644fd3b0c755e87f520f5f981cb9b2bee59",
-  "cipherbytes": "00100110000100010100000101011100"
+  "messageid": "8cd80fc6",
+  "iv": "d88c02e7e06d032d5004b73e86361852a94a7f8d4d7a10366a7845bb",
+  "mac": "3c76bb340bceef5d2886db87cae0b61ef46a636a50a6e56f20feb2b5912b4d5d",
+  "cipherbytes": "00001100"
 }
