@@ -1,13 +1,17 @@
 extern crate crypto;
 //use std::io;
+//use crate::encrypt::crypto::symmetriccipher::Decryptor;
+use crypto::symmetriccipher::Decryptor;
 use crypto::scrypt::ScryptParams;
 use self::crypto::digest::Digest;
 use self::crypto::sha3::Sha3;
 use serde::Serialize;
 use serde::Deserialize; 
 use std::convert::TryInto;
+use std::iter::FromIterator;
 extern crate serde;
 extern crate serde_json;
+use crate::encrypt::*;
 //use std::io::prelude::*;
 //#[macro_use] extern crate json_derive;
 use std::fs::File;
@@ -141,6 +145,8 @@ println!("Unique message ID: {:?}",verification);
     }
 
     let mut output = "".to_owned();
+
+    /*
     let mut keybyte;
     let mut msgbyte;
     for i in 0..key.chars().count() * 8 {
@@ -155,10 +161,100 @@ println!("Unique message ID: {:?}",verification);
             msgbyte = true;
         }
     output.push_str(&xor(keybyte, msgbyte).to_string());
+
+*/
+let mut bruhd = keybytes;
+//println!("Bruhd: {}",bruhd);
+bruhd.truncate(32);
+let mut bruhv = iv.to_string();
+bruhv.truncate(24);
+//let mut bruhse = vec![0; bruhv.len()];
+
+let mut chacha = crypto::chacha20::ChaCha20::new_xchacha20(bruhd.as_bytes(),bruhv.as_bytes());
+//crypto::symmetriccipher::SynchronousStreamCipher::process(&mut chacha,bruhv.as_bytes(), &mut bruhse);
+//let mbytesclone = msgbytes.clone();
+//let msgbytesstring = unwrappedmsgbytes.clone();
+let mut supercipherbytes = "".to_owned();
+for i in 0..cipherbytes.chars().count() {
+    if i % 8 == 0 && i != 0 {
+        supercipherbytes.push_str(" ");
     }
+    supercipherbytes.push_str(&cipherbytes.chars().nth(i).unwrap().to_string());
+
+}
+// println!("{}",supermsgbytes);
+let supercipherbytes = Vec::from_iter(supercipherbytes.split(" ").map(String::from));
+
+let mut cipherbytes: Vec<u8> = Vec::new();
+
+for i in 0..supercipherbytes.len() {
+    let cipherbyteslen: usize = isize::from_str_radix(&supercipherbytes[i], 2).unwrap().try_into().unwrap();
+    cipherbytes.push(cipherbyteslen as u8);
+}
+
+
+
+
+
+let mut bruhduo = crypto::buffer::RefReadBuffer::new(&cipherbytes);
+let mut bruhse = vec![0; cipherbytes.len()];
+let mut bruh = crypto::buffer::RefWriteBuffer::new(&mut bruhse);
+let chachaenc = chacha.decrypt(&mut bruhduo, &mut bruh, true);
+//println!("{:?}",bruhse);
+
+let mut ciphertext = "".to_owned();
+for i in 0..cipherbytes.len() {
+    let mut var = format!("{:b}", bruhse[i]).trim().to_owned();
+    var = var.chars().rev().collect::<String>();
+    for _g in 0..8 - var.chars().count() {
+        if var.chars().count() < 8 {
+            var.push_str("0");
+        }
+    }
+    var = var.chars().rev().collect::<String>();
+    ciphertext.push_str(&var);
+}
+
+
+let mut supercipherbytes = "".to_owned();
+for i in 0..ciphertext.chars().count() {
+    if i % 8 == 0 && i != 0 {
+        supercipherbytes.push_str(" ");
+    }
+    supercipherbytes.push_str(&ciphertext.chars().nth(i).unwrap().to_string());
+
+}
+// println!("{}",supermsgbytes);
+
+let supercipherbytes = Vec::from_iter(supercipherbytes.split(" ").map(String::from));
+
+/*
+for i in 0..supercipherbytes.len() / 8 {
+    let mut var = format!("{:b}", bruhse[i]).trim().to_owned();
+    var = var.chars().rev().collect::<String>();
+    for _g in 0..8 - var.chars().count() {
+        if var.chars().count() < 8 {
+            var.push_str("0");
+        }
+    }
+    var = var.chars().rev().collect::<String>();
+  
+    output.push_str(&var.to_string());
+}
+*/
+
+let mut output = "".to_string();
+for i in 0..supercipherbytes.len() {
+    let intval: u8 = isize::from_str_radix(&supercipherbytes[i].to_string(), 2).unwrap().try_into().unwrap();
+  
+        output.push_str(&(*&intval as char).to_string());
+    }
+
+
     if verbose {
     println!("Output: {}",output);
     }
+    let outputduo = output.clone();
     let padlength = output.clone();
     let padlength = padlength.chars().rev().collect::<String>();
     let padlength: String = padlength.chars().take(8).collect();
@@ -168,15 +264,22 @@ println!("Unique message ID: {:?}",verification);
         println!("Padding length: {}",padlength);
     }   
    
-
+    println!("BIG DEBUG: {}",output);
     for _i in 0..(padlength * 8) + 8 {
         output.pop();
     }
 
-    let padlengthr = output.clone().chars().rev().collect::<String>();
+    println!("BIG DEBUG: {}",output);
+    let padlengthr = output.clone();
+    println!("BIG DEBUG: {}",padlengthr);
     let padlengthr = padlengthr.chars().rev().collect::<String>();
+    println!("BIG DEBUG: {}",padlengthr);
+    let padlengthr = padlengthr.chars().rev().collect::<String>();
+    println!("BIG DEBUG: {}",padlengthr);
     let padlengthr: String = padlengthr.chars().take(8).collect();
+    println!("BIG DEBUG: {}",padlengthr);
     let padlengthr = padlengthr.chars().rev().collect::<String>();
+    println!("BIG DEBUG: {}",padlengthr.chars().rev().collect::<String>());
     let padlengthr: usize = isize::from_str_radix(&padlengthr.chars().rev().collect::<String>(), 2).unwrap().try_into().unwrap();
     if verbose {
     println!("padding length reversed: {}",padlengthr);
@@ -218,8 +321,14 @@ println!("Unique message ID: {:?}",verification);
         println!("Converted to ASCII: {}",finale);
         
     }
-
 }
+
+
+
+
+
+
+
 
 
 fn xor(keybyte: bool, msgbyte: bool) -> u8 {

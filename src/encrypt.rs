@@ -9,6 +9,7 @@ use serde::Deserialize;
 use self::crypto::digest::Digest;
 use self::crypto::sha3::Sha3;
 use crypto::scrypt::ScryptParams;
+use crate::encrypt::crypto::symmetriccipher::Encryptor;
 extern crate serde;
 extern crate serde_json;
 use std::fs::File;
@@ -47,11 +48,32 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     //println!("IV: {:?}",iv);
 
     crypto::scrypt::scrypt(input.as_bytes(),iv.as_bytes(),&params,&mut f);
-    //println!("{:?}",f);
     input = "".to_owned();
     for i in 0..f.len() {
         input.push_str(&(f[i] as char).to_string());
     }
+
+    //let mut bruhse = vec![0; 32];
+    //let mut bruhsedu = vec![0; 4096];
+
+    /*
+    let mut bruhd = String::from_utf8_lossy(&f).to_string();
+    bruhd.truncate(32);
+    let mut bruhv = iv.clone();
+    bruhv.truncate(24);
+    let mut chacha = crypto::chacha20::ChaCha20::new_xchacha20(bruhd.as_bytes(),bruhv.as_bytes());
+    let mut bruhduo = crypto::buffer::RefReadBuffer::new("h".as_bytes());
+    let mut bruhse = vec![0; 4096];
+    let mut bruh = crypto::buffer::RefWriteBuffer::new(&mut bruhse);
+    let chachaenc = chacha.encrypt(&mut bruhduo, &mut bruh, true);
+
+    assert_eq!(chachaenc.is_ok(), true,"Is good");
+
+    println!("{:?}",bruhse);
+    //println!("{:?}",f);
+    */
+
+
     let mut inkey = sha3_256(input.trim()).to_owned();
     let macsecret;
     /*println!("MAC Secret?");
@@ -82,8 +104,8 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     let padding = tobytes(&padding);
     let umbclone = unwrappedmsgbytes.clone();
     println!("Debug: {}",umbclone.chars().count() / 8);
-    let paddinglen = rand::thread_rng().gen_range(0, 128 - (umbclone.chars().count() / 8));
-    let otherpaddinglen = (128 - (umbclone.chars().count() / 8)) - paddinglen;
+    let paddinglen = rand::thread_rng().gen_range(0, 64 - (umbclone.chars().count() / 8));
+    let otherpaddinglen = (64 - (umbclone.chars().count() / 8)) - paddinglen;
     println!("Debug 2: {} {}",paddinglen,otherpaddinglen);
     for i in 0..paddinglen {
         unwrappedmsgbytes.push_str(&padding[i]);
@@ -218,6 +240,7 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
         }
         */
     
+        /*
     let mut keybyte;
     let mut msgbyte;
     let mut ciphertext = "".to_owned();
@@ -238,6 +261,39 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     
     }
 }
+*/
+let mut bruhd = keybytes.into_iter().collect::<String>();
+println!("Bruhd: {}",bruhd);
+bruhd.truncate(32);
+let mut bruhv = iv.to_string();
+bruhv.truncate(24);
+//let mut bruhse = vec![0; bruhv.len()];
+
+let mut chacha = crypto::chacha20::ChaCha20::new_xchacha20(bruhd.as_bytes(),bruhv.as_bytes());
+//crypto::symmetriccipher::SynchronousStreamCipher::process(&mut chacha,bruhv.as_bytes(), &mut bruhse);
+//let mbytesclone = msgbytes.clone();
+let msgbytesstring = unwrappedmsgbytes.clone();
+let mut bruhduo = crypto::buffer::RefReadBuffer::new(msgbytesstring.as_bytes());
+let mut bruhse = vec![0; msgbytesstring.len()];
+let mut bruh = crypto::buffer::RefWriteBuffer::new(&mut bruhse);
+let chachaenc = chacha.encrypt(&mut bruhduo, &mut bruh, true);
+println!("{:?}",bruhse);
+let mut ciphertext = "".to_owned();
+for i in 0..msgbytesstring.len() {
+    let mut var = format!("{:b}", bruhse[i]).trim().to_owned();
+    var = var.chars().rev().collect::<String>();
+    for _g in 0..8 - var.chars().count() {
+        if var.chars().count() < 8 {
+            var.push_str("0");
+        }
+    }
+    var = var.chars().rev().collect::<String>();
+    ciphertext.push_str(&var);
+}
+
+
+
+
 if verbose == true {
     for i in 0..msgbytes.len() {
         println!("Original: {}",msgbytes[i]);
