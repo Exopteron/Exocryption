@@ -69,6 +69,19 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
 
     
     let msgbytes = tobytes(&msg);
+    let unwrappedmsgbytes: String = msgbytes.into_iter().collect();
+    let mut finalized = "".to_owned();
+    let mut msgbytes = vec!["a".to_owned(); msg.chars().count()];
+    let mut startpoint = 0;
+    for i in 0..unwrappedmsgbytes.chars().count() / 8 {
+        for j in startpoint..(startpoint + 8) {
+                finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
+                if j == 7 {
+                    msgbytes[i] = finalized;
+                    finalized = "".to_owned();
+                }
+        }
+    }
     
 
 
@@ -108,7 +121,7 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     let mut keybyte;
     let mut msgbyte;
     let mut ciphertext = "".to_owned();
-    for ib in 0..key.chars().count() {
+    for ib in 0..unwrappedmsgbytes.chars().count() / 8 {
     for i in 0..8 {
         if msgbytes[ib].chars().nth(i).unwrap() == '0' {
             msgbyte = false;
