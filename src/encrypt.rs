@@ -71,20 +71,21 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     
     let msgbytes = tobytes(&msg);
     let mut unwrappedmsgbytes: String = msgbytes.into_iter().collect();
-    println!("Debug 3 {}",unwrappedmsgbytes);
     let mut finalized = "".to_owned();
     let mut msgbytes = vec!["".to_owned(); unwrappedmsgbytes.chars().count() / 8];
     let mut startpoint = 0;
     let mut supermsgbytes = "".to_owned();
-    let mut padding = sha3_224(&rand::thread_rng().gen_range(1, 100001).to_string());
+    let mut padding = sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string());
+    padding.push_str(&sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string()));
     let mut padding = tobytes(&padding);
-    let paddinglen = rand::thread_rng().gen_range(8, 16);
+    let paddinglen = rand::thread_rng().gen_range(0, 128);
 
     for i in 0..paddinglen {
         unwrappedmsgbytes.push_str(&padding[i]);
     }
-
-    println!("Padding length: {}",paddinglen);
+    if verbose {
+        println!("Padding length: {}",paddinglen);
+    }
     let paddinglenbyte = format!("{:b}", paddinglen).trim().to_owned();
     let mut paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
     for _g in 0..8 - paddinglenbyte.chars().count() {
@@ -93,7 +94,8 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
         }
     }
     let paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
-    println!("As a byte: {}",paddinglenbyte);
+
+    
 /*
     var = var.chars().rev().collect::<String>();
     for _g in 0..8 - var.chars().count() {
@@ -106,6 +108,25 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
 */
     unwrappedmsgbytes.push_str(&paddinglenbyte.to_string());
 
+    let mut unwrappedmsgbytes = unwrappedmsgbytes.chars().rev().collect::<String>();
+    let paddinglen = rand::thread_rng().gen_range(0, 128);
+
+    for i in 0..paddinglen {
+        unwrappedmsgbytes.push_str(&padding[i]);
+    }
+
+
+    let paddinglenbyte = format!("{:b}", paddinglen).trim().to_owned();
+    let mut paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
+    for _g in 0..8 - paddinglenbyte.chars().count() {
+        if paddinglenbyte.chars().count() < 8 {
+            paddinglenbyte.push_str("0");
+        }
+    }
+    unwrappedmsgbytes.push_str(&paddinglenbyte);
+    unwrappedmsgbytes = unwrappedmsgbytes.chars().rev().collect::<String>();
+
+
 
     for i in 0..unwrappedmsgbytes.chars().count() {
         if i % 8 == 0 && i != 0 {
@@ -114,7 +135,7 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
         supermsgbytes.push_str(&unwrappedmsgbytes.chars().nth(i).unwrap().to_string());
 
     }
-    println!("{}",supermsgbytes);
+   // println!("{}",supermsgbytes);
     let msgbytes = Vec::from_iter(supermsgbytes.split(" ").map(String::from));
 
     /*
@@ -196,7 +217,6 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     let mut ciphertext = "".to_owned();
     for ib in 0..(unwrappedmsgbytes.chars().count() / 8) {
     for i in 0..8 {
-        println!("Debug: {} {}",msgbytes[ib],msgbytes[ib].chars().nth(1).unwrap());
         if msgbytes[ib].chars().nth(i).unwrap() == '0' {
             msgbyte = false;
         } else {

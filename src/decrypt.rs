@@ -160,12 +160,32 @@ println!("Unique message ID: {:?}",verification);
     let padlength = padlength.chars().rev().collect::<String>();
     let padlength: String = padlength.chars().take(8).collect();
     let padlength = padlength.chars().rev().collect::<String>();
-    let padlength: u8 = isize::from_str_radix(&padlength, 2).unwrap().try_into().unwrap();
-    println!("Padding length: {}",padlength);
+    let padlength: usize = isize::from_str_radix(&padlength, 2).unwrap().try_into().unwrap();
+    if verbose {
+        println!("Padding length: {}",padlength);
+    }   
+   
 
     for i in 0..(padlength * 8) + 8 {
         output.pop();
     }
+
+    let padlengthr = output.clone().chars().rev().collect::<String>();
+    let padlengthr = padlengthr.chars().rev().collect::<String>();
+    let padlengthr: String = padlengthr.chars().take(8).collect();
+    let padlengthr = padlengthr.chars().rev().collect::<String>();
+    let padlengthr: u8 = isize::from_str_radix(&padlengthr.chars().rev().collect::<String>(), 2).unwrap().try_into().unwrap();
+    if verbose {
+    println!("padding length reversed: {}",padlengthr);
+    }
+
+    output = output.chars().rev().collect::<String>();
+    for i in 0..(padlengthr * 8) + 8 {
+        output.pop();
+    }
+    output = output.chars().rev().collect::<String>();
+
+
 
     let mut veccer: Vec<String> = vec!["".to_string(); output.chars().count()];
     let mut inter = "".to_owned();
