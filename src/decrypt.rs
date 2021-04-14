@@ -21,7 +21,8 @@ pub fn main(verbose: bool,keyfilename: String, mut inputout: String) {
     struct Messagein {
         iv: String,
         mac: String,
-        cipherbytes: String
+        cipherbytes: String,
+        messageid: String
     }
 
     #[derive(Serialize, Deserialize)]
@@ -107,8 +108,13 @@ verification = sha3_256(&verification);
 verification = String::from(verification);
 verification.truncate(8);
 println!("Unique message ID: {:?}",verification);
+if verification == message.messageid {
+    println!("Message ID match.");
+} else {
+    println!("Message ID mismatch.");
+}
 if originalmac != mac {
-    println!("Message has been tampered with / no key match.");
+    println!("Message has been tampered with.");
     std::process::exit(1);
 }
     input = "".to_owned();
