@@ -103,10 +103,10 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
     padding.push_str(&sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string()));
     let padding = tobytes(&padding);
     let umbclone = unwrappedmsgbytes.clone();
-    println!("Debug: {}",umbclone.chars().count() / 8);
+    
     let paddinglen = rand::thread_rng().gen_range(0, 64 - (umbclone.chars().count() / 8));
     let otherpaddinglen = (64 - (umbclone.chars().count() / 8)) - paddinglen;
-    println!("Debug 2: {} {}",paddinglen,otherpaddinglen);
+    
     for i in 0..paddinglen {
         unwrappedmsgbytes.push_str(&padding[i]);
     }
@@ -263,7 +263,6 @@ pub fn main(verbose: bool,keyfilename: String, msg: String) {
 }
 */
 let mut bruhd = keybytes.into_iter().collect::<String>();
-println!("Bruhd: {}",bruhd);
 bruhd.truncate(32);
 let mut bruhv = iv.to_string();
 bruhv.truncate(24);
@@ -276,8 +275,7 @@ let msgbytesstring = unwrappedmsgbytes.clone();
 let mut bruhduo = crypto::buffer::RefReadBuffer::new(msgbytesstring.as_bytes());
 let mut bruhse = vec![0; msgbytesstring.len()];
 let mut bruh = crypto::buffer::RefWriteBuffer::new(&mut bruhse);
-let chachaenc = chacha.encrypt(&mut bruhduo, &mut bruh, true);
-println!("{:?}",bruhse);
+let _chachaenc = chacha.encrypt(&mut bruhduo, &mut bruh, true);
 let mut ciphertext = "".to_owned();
 for i in 0..msgbytesstring.len() {
     let mut var = format!("{:b}", bruhse[i]).trim().to_owned();
@@ -347,6 +345,7 @@ println!("{}",json);
 
 
 // Exclusive OR function
+/*
 fn xor(keybyte: bool, msgbyte: bool) -> u8 {
     if keybyte && msgbyte {
         return 0;
@@ -356,6 +355,7 @@ fn xor(keybyte: bool, msgbyte: bool) -> u8 {
         return 1;
     }
 }
+*/
 
 
 // Convert to bytes

@@ -11,7 +11,6 @@ use std::convert::TryInto;
 use std::iter::FromIterator;
 extern crate serde;
 extern crate serde_json;
-use crate::encrypt::*;
 //use std::io::prelude::*;
 //#[macro_use] extern crate json_derive;
 use std::fs::File;
@@ -144,7 +143,7 @@ println!("Unique message ID: {:?}",verification);
     println!("Cipher bytes: {}",cipherbytes);
     }
 
-    let mut output = "".to_owned();
+    //let mut output = "".to_owned();
 
     /*
     let mut keybyte;
@@ -199,7 +198,7 @@ for i in 0..supercipherbytes.len() {
 let mut bruhduo = crypto::buffer::RefReadBuffer::new(&cipherbytes);
 let mut bruhse = vec![0; cipherbytes.len()];
 let mut bruh = crypto::buffer::RefWriteBuffer::new(&mut bruhse);
-let chachaenc = chacha.decrypt(&mut bruhduo, &mut bruh, true);
+let _chachaenc = chacha.decrypt(&mut bruhduo, &mut bruh, true);
 //println!("{:?}",bruhse);
 
 let mut ciphertext = "".to_owned();
@@ -254,7 +253,7 @@ for i in 0..supercipherbytes.len() {
     if verbose {
     println!("Output: {}",output);
     }
-    let outputduo = output.clone();
+    
     let padlength = output.clone();
     let padlength = padlength.chars().rev().collect::<String>();
     let padlength: String = padlength.chars().take(8).collect();
@@ -264,22 +263,22 @@ for i in 0..supercipherbytes.len() {
         println!("Padding length: {}",padlength);
     }   
    
-    println!("BIG DEBUG: {}",output);
+ //   println!("BIG DEBUG: {}",output);
     for _i in 0..(padlength * 8) + 8 {
         output.pop();
     }
 
-    println!("BIG DEBUG: {}",output);
+    //println!("BIG DEBUG: {}",output);
     let padlengthr = output.clone();
-    println!("BIG DEBUG: {}",padlengthr);
+   // println!("BIG DEBUG: {}",padlengthr);
     let padlengthr = padlengthr.chars().rev().collect::<String>();
-    println!("BIG DEBUG: {}",padlengthr);
+    //println!("BIG DEBUG: {}",padlengthr);
     let padlengthr = padlengthr.chars().rev().collect::<String>();
-    println!("BIG DEBUG: {}",padlengthr);
+   //println!("BIG DEBUG: {}",padlengthr);
     let padlengthr: String = padlengthr.chars().take(8).collect();
-    println!("BIG DEBUG: {}",padlengthr);
+    //println!("BIG DEBUG: {}",padlengthr);
     let padlengthr = padlengthr.chars().rev().collect::<String>();
-    println!("BIG DEBUG: {}",padlengthr.chars().rev().collect::<String>());
+    //println!("BIG DEBUG: {}",padlengthr.chars().rev().collect::<String>());
     let padlengthr: usize = isize::from_str_radix(&padlengthr.chars().rev().collect::<String>(), 2).unwrap().try_into().unwrap();
     if verbose {
     println!("padding length reversed: {}",padlengthr);
@@ -328,7 +327,8 @@ for i in 0..supercipherbytes.len() {
 
 
 
-
+// Exclusive OR Function
+/*
 
 
 fn xor(keybyte: bool, msgbyte: bool) -> u8 {
@@ -340,7 +340,7 @@ fn xor(keybyte: bool, msgbyte: bool) -> u8 {
         return 1;
     }
 }
-
+*/
 
 
 fn tobytes(msg: &str) -> String {
