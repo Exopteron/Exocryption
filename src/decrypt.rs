@@ -107,6 +107,10 @@ verification = sha3_256(&verification);
 verification = String::from(verification);
 verification.truncate(8);
 println!("Unique message ID: {:?}",verification);
+if originalmac != mac {
+    println!("Message has been tampered with / no key match.");
+    std::process::exit(1);
+}
     input = "".to_owned();
     for i in 0..f.len() {
         input.push_str(&(f[i] as char).to_string());

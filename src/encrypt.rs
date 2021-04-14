@@ -357,7 +357,6 @@ fn xor(keybyte: bool, msgbyte: bool) -> u8 {
 }
 */
 
-
 // Convert to bytes
 
 fn tobytes(msg: &str) -> Vec<String> {
