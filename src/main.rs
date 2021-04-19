@@ -1,9 +1,23 @@
 use std::env;
 extern crate getopts;
+extern crate serde;
+extern crate serde_json;
 use getopts::Options;
 use std::process;
-mod encrypt;
-mod decrypt;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+use serde::Serialize;
+use serde::Deserialize;
+pub mod encrypt;
+pub mod decrypt;
+
+#[derive(Serialize, Deserialize)]
+pub struct Key {
+    key: String,
+    macsecret: String,
+    pfssecret: String
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -22,7 +36,7 @@ fn main() {
     opts.optopt("t","text","select text","\"text\"");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
-        Err(f) => { panic!(f.to_string()) }
+        Err(f) => { panic!(f.to_string()) } 
     };
     if matches.opt_present("h") {
         println!("Usage: exocryption [-v (verbose)] [[-e] [-encrypt]] | [[-d [-decrypt]] -k [keyfile] -t [message]");
@@ -58,10 +72,47 @@ fn main() {
     */
 
    // let keyfile = "key.json"; //&args[2];
+    let keyfilename = keyfile.unwrap().trim().to_string();
+    // Make sure given keyfile exists
+    if Path::new(&keyfilename).exists() == false {
+        println!("{}: No such file",keyfilename);
+        std::process::exit(1);
+    }
+
+    // Open the keyfile
+    let mut fileduo = File::open(keyfilename).unwrap();
+
+    // Create a new string and read the keyfile into said string
+    let mut buffduo = String::new();
+    fileduo.read_to_string(&mut buffduo).unwrap();
+
+
+
+    
+
+    
+    // Create a "Key" object (Defined above) from the keyfile and create a variable called "input" to hold the key
+    let keyeren: encrypt::Key = serde_json::from_str(&buffduo).unwrap();
+    let keyerde: decrypt::Key = serde_json::from_str(&buffduo).unwrap();
     if mode == "e" || mode == "encrypt" {
-        encrypt::main(verbosity,keyfile.unwrap().trim().to_string(),textin.unwrap());
+        println!("{}",encrypt::main(verbosity,keyeren,textin.unwrap()));
     } else if mode == "d" || mode == "decrypt" {
-        decrypt::main(verbosity,keyfile.unwrap().trim().to_string(),textin.unwrap());
+        let inputout = textin.unwrap().trim().to_string();
+        //println!("{:?}",inputout);
+        if Path::new(&inputout).exists() == false {
+           println!("{}: No such file",inputout);
+           std::process::exit(1);
+       }
+     //  // {}",line!());
+       
+       let mut file = File::open(inputout).unwrap();
+       let mut buff = String::new();
+       file.read_to_string(&mut buff).unwrap();
+    
+     //  // {}",line!());
+       
+    let message: decrypt::Messagein = serde_json::from_str(&buff).unwrap();
+        println!("{}",decrypt::main(verbosity,keyerde,message));
     } else {
         println!("Invalid subcommand: {}", mode);
     }
