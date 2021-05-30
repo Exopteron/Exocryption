@@ -5,6 +5,10 @@ A simple file encryption program written in Rust using the Rust Crypto set of cr
 
 This is a terminal application that lets you encrypt files in a *hopefully* simple way.
 
+The reason I made this software is all from trying to transfer an encrypted file from my Linux machine to my Mac.
+
+First, I tried OpenSSL, using some long command to pick out each option, finding certain options would completely compromise security, and then finally I got a file encrypted. But, apparently macOS comes with a version of OpenSSL that doesn't support PBKDF2. Alright, I'll try just using a large iteration count of SHA-512. No luck, macOS OpenSSL doesn't support AES-256-CTR. Then I thought to try GPG, but macOS doesn't come with GPG. So sites recommended me to installing Homebrew to install GPG. So I tried, and couldn't get it to install properly on my older Mac. So I thought, to make it easier for others who find themselves in a similar position, I want to make an easy-to-use simple and (hopefully) secure file encryption program .
+
 Currently there are two algorithms to choose from and they are both high-level AEADs. This means your files are confidential and authenticated.
 
 These include:
@@ -28,28 +32,28 @@ Then, the method is appended.
 Next is another VarInt of the length of the nonce. Then the nonce is appended.
 Then, the rest of the file are the encrypted bytes.
 
+What gets encrypted is the file and the file name. This means if you change the encrypted file's name, you can still preserve the original name within.
+
 Usage:
 Arguments are:
 
--c (cipher) Choose between AES-256-GCM-SIV and XChaCha20-Poly1305. AES-256-GCM-SIV is the default.
+`-c (cipher) Choose between AES-256-GCM-SIV and XChaCha20-Poly1305. AES-256-GCM-SIV is the default.`
 
+`-e (encrypt) Go into encryption mode.`
 
+`-d (decrypt) Go into decryption mode.`
 
-The key and macsecret can be anything. It's hashed with scrypt using the randomly generated IV as a salt. Keystream is generated from xoring the bits of the scrypt hash with the bits of the message. If we run out of hash bits it's hashed again with SHA3-256 to get more bits.
+`-p (password) Specify a password.`
 
-I am not a cryptographer. Please don't use this for anything serious.
+`-f (file) Specify the file.`
 
-Usage:
+If no arguments are provided, Exocryption will launch into Interactive mode.
+If any arguments are missing, Interactive mode will start and ask for these arguments.
 
-If you run "exocryption -v" then it will be in verbose mode. Next flag is encrypt/decrypt. 
+Afterward, Exocryption will ask where to save the file.
 
-For encrypting:
+Decrypting a file will automatically pull the cipher used from the header.
 
-`exocryption -e -k (key json) -t "(message)" `  
-Keyfile format is up above. This will output a json which can be outputted into a file (Without verbose mode enabled) by doing
+This has only been tested on Linux, no clue if it works on windows.
 
-`exocryption -e -k (key json) -t "(message") > message.json`
-
-To decrypt, simply run
-
-`exocryption -d -k (key json) -t (message json)`
+If you have any issues/feature requests, let me know!
