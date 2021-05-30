@@ -6,6 +6,7 @@ fn main() {
     if cfg!(windows) {
         println!("[Exocryption] We have detected you are running on windows. You may have issues as this was built on Linux. Please report any issues to the github!");
     }
+    println!("Updates from v0.0.2b\n-- Added output file flag -o\n");
     println!("Updates from v0.0.2\n-- Final optimizations, released to GitHub!\n");
     println!("Updates from v0.0.1:\n-- New encoding format for smaller file sizes\n-- Better error handling\n-- More interactive interactive mode.\n");
     let args: Vec<String> = std::env::args().collect();
@@ -14,9 +15,10 @@ fn main() {
     opts.optflag("e","encrypt","encrypt text");
     opts.optflag("d","decrypt","decrypt text");
     opts.optflag("h","help","get help");
-    opts.optopt("f","file","select file","KEYFILE");
+    opts.optopt("f","file","select file","FILE");
     opts.optopt("p","password","use this password","\"text\"");
     opts.optopt("c","cipher","select cipher","CIPHER");
+    opts.optopt("o","output","select output file","FILE");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
         Err(f) => { panic!("{}",f.to_string()) } 
@@ -82,6 +84,13 @@ fn main() {
     } else {
         file = userfile.unwrap();
     }
+    let outputfile = matches.opt_str("o");
+    let outfile;
+    if outputfile.is_none() {
+        outfile = "".to_owned();
+    } else {
+        outfile = outputfile.unwrap();
+    }
     let cipher = matches.opt_str("c");
     let cipher = match cipher {
         Some(x) => x,
@@ -101,9 +110,9 @@ fn main() {
     */
 
     if g == "Encrypt" {
-        encrypt::main(password, file, cipher);
+        encrypt::main(password, file, cipher, outfile);
     } else if g == "Decrypt" {
-        decrypt::main(password, file, cipher);
+        decrypt::main(password, file, cipher, outfile);
     } else if g == "" {
         println!("No mode selected.");
         helpfn();
@@ -111,5 +120,5 @@ fn main() {
 }
 
 fn helpfn() {
-    println!("Usage: exocryption [-c (cipher (choose between AES-256-GCM-SIV and XChaCha20-Poly1305, AES-256-GCM-SIV Default.) )] [[-e] [-encrypt]] | [[-d [-decrypt]] -p [password] -f [file]");
+    println!("Usage: exocryption [-c (cipher (choose between AES-256-GCM-SIV and XChaCha20-Poly1305, AES-256-GCM-SIV Default.) )] [[-e] [-encrypt]] | [[-d [-decrypt]] -p [password] -f [file] -o [output file]");
 }

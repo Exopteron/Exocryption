@@ -1,6 +1,6 @@
 [package]
 name = "exocryption"
-version = "0.0.2-b"
+version = "0.0.2-c"
 authors = ["Exopteron <exopteron@example.com>"]
 edition = "2018"
 

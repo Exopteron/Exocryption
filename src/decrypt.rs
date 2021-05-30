@@ -24,7 +24,7 @@ struct DecryptedFile {
     filecontents: Vec<u8>,
 }
 
-pub fn main(password: String, filename: String, mut ciphertouse: String) {
+pub fn main(password: String, filename: String, mut ciphertouse: String, outputfile: String) {
     let params = argon2::Params {
         m_cost: 37000,
         t_cost: 2,
@@ -132,24 +132,28 @@ pub fn main(password: String, filename: String, mut ciphertouse: String) {
         finaldecryptedfile = decryptedfilecontents;
     }
     let mut filefinal = "".to_owned();
-    filefinal.push_str(&finalfilename);
-    println!(
-        "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
-        filefinal
-    );
-    let mut iostring = String::new();
-    io::stdin()
-        .read_line(&mut iostring)
-        .ok()
-        .expect("Couldn't read line");
-    let iostring = iostring.trim();
-    if iostring != "" {
-        filefinal = iostring.to_string();
+    if outputfile == "" {
+        filefinal.push_str(&finalfilename);
+        println!(
+            "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
+            filefinal
+        );
+        let mut iostring = String::new();
+        io::stdin()
+            .read_line(&mut iostring)
+            .ok()
+            .expect("Couldn't read line");
+        let iostring = iostring.trim();
+        if iostring != "" {
+            filefinal = iostring.to_string();
+        }
+        println!("[Exocryption] Writing encrypted file to {}", filefinal);
+    } else {
+        filefinal = outputfile;
     }
-    println!("[Exocryption] Writing decrypted file to {}", filefinal);
     let fswrite = fs::write(&filefinal, finaldecryptedfile);
     if fswrite.is_err() {
-        println!("[Exocryption] Couldn't write to {}!", filefinal);
+        println!("[Exocryption] Couldn't write to {}!",filefinal);
     }
     /*
     let key = Key::from_slice(b64.as_bytes());
