@@ -7,7 +7,7 @@ This is a terminal application that lets you encrypt files in a *hopefully* simp
 
 The reason I made this software is all from trying to transfer an encrypted file from my Linux machine to my Mac.
 
-First, I tried OpenSSL, using some long command to pick out each option, finding certain options would completely compromise security, and then finally I got a file encrypted. But, apparently macOS comes with a version of OpenSSL that doesn't support PBKDF2. Alright, I'll try just using a large iteration count of SHA-512. No luck, macOS OpenSSL doesn't support AES-256-CTR. Then I thought to try GPG, but macOS doesn't come with GPG. So sites recommended me to installing Homebrew to install GPG. So I tried, and couldn't get it to install properly on my older Mac. So I thought, to make it easier for others who find themselves in a similar position, I want to make an easy-to-use simple and (hopefully) secure file encryption program .
+First, I tried OpenSSL, using some long command to pick out each option, finding certain options would completely compromise security, and then finally I got a file encrypted. But, apparently macOS comes with a version of OpenSSL that doesn't support PBKDF2. Alright, I'll try just using a large iteration count of SHA-512. No luck, macOS OpenSSL doesn't support AES-256-CTR. Then I thought to try GPG, but macOS doesn't come with GPG. So sites recommended me to installing Homebrew to install GPG. So I tried, and couldn't get it to install properly on my older Mac. So I thought, to make it easier for others who find themselves in a similar position, I want to make an easy-to-use simple and (hopefully) secure file encryption program.
 
 Currently there are two algorithms to choose from and they are both high-level AEADs. This means your files are confidential and authenticated.
 
@@ -54,6 +54,6 @@ Afterward, Exocryption will ask where to save the file.
 
 Decrypting a file will automatically pull the cipher used from the header.
 
-This has only been tested on Linux, no clue if it works on windows.
+This has only been tested on Linux, no clue if it works on Windows.
 
 If you have any issues/feature requests, let me know!
