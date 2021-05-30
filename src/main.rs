@@ -3,6 +3,7 @@ mod decrypt;
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 fn main() {
     println!("[Exocryption] Welcome to Exocryption v{}!",VERSION);
+    println!("Updates from v0.0.2\n-- Final optimizations, released to GitHub!\n");
     println!("Updates from v0.0.1:\n-- New encoding format for smaller file sizes\n-- Better error handling\n-- More interactive interactive mode.\n");
     let args: Vec<String> = std::env::args().collect();
     let mut opts = getopts::Options::new();
