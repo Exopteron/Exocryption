@@ -1,341 +1,185 @@
-extern crate crypto;
-extern crate rand;
-//use std::io;
-use std::str;
-use rand::Rng;
-use std::iter::FromIterator;
-use serde::Serialize;
-use serde::Deserialize;
-use self::crypto::digest::Digest;
-use self::crypto::sha3::Sha3;
-use crypto::scrypt::ScryptParams;
-extern crate serde;
-extern crate serde_json;
-use std::fs::File;
+use argon2::{
+    password_hash::{PasswordHasher, Salt, SaltString},
+    Argon2,
+};
+use std::convert::TryFrom;
+use integer_encoding::VarInt;
+use aes_gcm_siv::aead::{Aead as AesAead, NewAead as AesNewAead};
+use aes_gcm_siv::{Aes256GcmSiv, Key as AesKey, Nonce}; // Or `Aes128GcmSiv`
+//use chacha20poly1305::aead::{Aead, NewAead};
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce}; // Or `XChaCha20Poly1305`
+use rand::RngCore;
+use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
+use std::fs::{self, File};
+use std::io;
 use std::io::Read;
 
-
-pub fn main(verbose: bool,keyfilename: String, msg: String) {
-    #[derive(Serialize, Deserialize)]
-    struct Key {
-        key: String,
-        macsecret: String
-    }
-    //let verbose = false;
-    let mut input;
-    let mut fileduo = File::open(keyfilename).unwrap();
-    let mut buffduo = String::new();
-    fileduo.read_to_string(&mut buffduo).unwrap();
-    let keyer: Key = serde_json::from_str(&buffduo).unwrap();
-   /* println!("Key?");
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
-    input = input.trim().to_string();
-    */ input = keyer.key;
-    //let graphuck = input.to_owned();
-    let mut f = vec![0; 24];
-    let params = ScryptParams::new(10,8,1);
-
-    let mut iv = sha3_224(&rand::thread_rng().gen_range(1, 100001).to_string());
-    for _i in 0..rand::thread_rng().gen_range(1,1001) {
-        iv = sha3_224(&iv);
-    }
-    //println!("IV: {:?}",iv);
-
-    crypto::scrypt::scrypt(input.as_bytes(),iv.as_bytes(),&params,&mut f);
-    //println!("{:?}",f);
-    input = "".to_owned();
-    for i in 0..f.len() {
-        input.push_str(&(f[i] as char).to_string());
-    }
-    let mut inkey = sha3_256(input.trim()).to_owned();
-    let macsecret;
-    /*println!("MAC Secret?");
-    io::stdin()
-    .read_line(&mut macsecret)
-    .expect("Failed to read line");
-    macsecret = macsecret.trim().to_string();
-    */ macsecret = keyer.macsecret;
-    /*
-    let mut msg = String::new();
-    println!("Message?");
-    io::stdin()
-    .read_line(&mut msg)
-    .expect("Failed to read line");
-    */
-
-
-
-    
-    let msgbytes = tobytes(&msg);
-    let mut unwrappedmsgbytes: String = msgbytes.into_iter().collect();
-    let mut finalized = "".to_owned();
-    let mut msgbytes = vec!["".to_owned(); unwrappedmsgbytes.chars().count() / 8];
-    let mut startpoint = 0;
-    let mut supermsgbytes = "".to_owned();
-    let mut padding = sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string());
-    padding.push_str(&sha3_512(&rand::thread_rng().gen_range(1, 100001).to_string()));
-    let mut padding = tobytes(&padding);
-    let paddinglen = rand::thread_rng().gen_range(0, 128);
-
-    for i in 0..paddinglen {
-        unwrappedmsgbytes.push_str(&padding[i]);
-    }
-    if verbose {
-        println!("Padding length: {}",paddinglen);
-    }
-    let paddinglenbyte = format!("{:b}", paddinglen).trim().to_owned();
-    let mut paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
-    for _g in 0..8 - paddinglenbyte.chars().count() {
-        if paddinglenbyte.chars().count() < 8 {
-            paddinglenbyte.push_str("0");
-        }
-    }
-    let paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
-
-    
-/*
-    var = var.chars().rev().collect::<String>();
-    for _g in 0..8 - var.chars().count() {
-        if var.chars().count() < 8 {
-            var.push_str("0");
-        }
-    }
-
-    out[i] = var.chars().rev().collect::<String>();
-*/
-    unwrappedmsgbytes.push_str(&paddinglenbyte.to_string());
-
-    let mut unwrappedmsgbytes = unwrappedmsgbytes.chars().rev().collect::<String>();
-    let paddinglen = rand::thread_rng().gen_range(0, 128);
-
-    for i in 0..paddinglen {
-        unwrappedmsgbytes.push_str(&padding[i]);
-    }
-
-
-    let paddinglenbyte = format!("{:b}", paddinglen).trim().to_owned();
-    let mut paddinglenbyte = paddinglenbyte.chars().rev().collect::<String>();
-    for _g in 0..8 - paddinglenbyte.chars().count() {
-        if paddinglenbyte.chars().count() < 8 {
-            paddinglenbyte.push_str("0");
-        }
-    }
-    unwrappedmsgbytes.push_str(&paddinglenbyte);
-    unwrappedmsgbytes = unwrappedmsgbytes.chars().rev().collect::<String>();
-
-
-
-    for i in 0..unwrappedmsgbytes.chars().count() {
-        if i % 8 == 0 && i != 0 {
-            supermsgbytes.push_str(" ");
-        }
-        supermsgbytes.push_str(&unwrappedmsgbytes.chars().nth(i).unwrap().to_string());
-
-    }
-   // println!("{}",supermsgbytes);
-    let msgbytes = Vec::from_iter(supermsgbytes.split(" ").map(String::from));
-
-    /*
-    for i in 0..unwrappedmsgbytes.chars().count() / 8 {
-        for j in startpoint..(startpoint + 8) {
-            if j % 8 == 0 && j != 0 {
-                println!("debug like 20000 bruh {}",finalized);
-                finalized = "".to_owned();
-                startpoint = startpoint + 8;
-                break
-            }
-          //  println!("debug 1 billion {}",j);
-            println!("debug 12 billion {} {}",j,unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
-            finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
-
-        }
-    }
-
-    */
-
-
-
-
-/*
-
-    for i in 0..unwrappedmsgbytes.chars().count() / 8 {
-        println!("{} {} DEbug2",unwrappedmsgbytes.chars().count(), msgbytes.len());
-        for j in startpoint..(startpoint + 8) {
-                finalized.push_str(&unwrappedmsgbytes.chars().nth(j).unwrap().to_string());
-                println!("Debug 4 {}",j);
-                if j % 7 == 0 {
-                    startpoint = startpoint + 8;
-                    msgbytes[i] = finalized;
-                    finalized = "".to_owned();
-                }
-            }
-
-            
-    }
-    */
-    
-
-
-    let mut key = "".trim().to_owned();
-    let mut counter = 0;
-    for i in 0..unwrappedmsgbytes.chars().count() / 8 {
-        if counter == inkey.chars().count() {
-            if unwrappedmsgbytes.chars().count() / 8 - key.chars().count() > 0 {
-                inkey.push_str(&sha3_256(&inkey));
-            
-            }
-
-
-        }
-        
-        key.push_str(&inkey.chars().nth(i).unwrap().to_string());
-        //println!("looksie: {}",key);
-        counter = counter + 1;
-    }
-
-    
-
-
-    let keybytes = tobytes(&key);
-
-/*
-    for i in 0..msg.chars().count() {
-   // println!("Message: {:?}", msgbytes[i]);
-
-    }
-    for i in 0..key.chars().count() {
-     //   println!("Key: {:?}", keybytes[i]);
-    
-        }
-        */
-    
-    let mut keybyte;
-    let mut msgbyte;
-    let mut ciphertext = "".to_owned();
-    for ib in 0..(unwrappedmsgbytes.chars().count() / 8) {
-    for i in 0..8 {
-        if msgbytes[ib].chars().nth(i).unwrap() == '0' {
-            msgbyte = false;
-        } else {
-            msgbyte = true;
-        }
-
-        if keybytes[ib].chars().nth(i).unwrap() == '0' {
-            keybyte = false;
-        } else {
-            keybyte = true;
-        }
-        ciphertext.push_str(&xor(keybyte, msgbyte).to_string());
-    
-    }
-}
-if verbose == true {
-    for i in 0..msgbytes.len() {
-        println!("Original: {}",msgbytes[i]);
-    }
-    println!("Ciphertext: {}",ciphertext);
-    println!("IV: {}",iv);
-}
-
-let mut mac = "".to_owned();
-let innermacsecret = sha3_512(&sha3_256(&macsecret));
-let outermacsecret = sha3_512(&sha3_256(&sha3_224(&macsecret)));
-mac.push_str(ciphertext.trim());
-mac.push_str(iv.trim());
-mac.push_str(macsecret.trim());
-mac = sha3_256(&mac);
-let mut innermac = "".to_owned();
-innermac.push_str(&innermacsecret);
-innermac.push_str(&mac);
-innermac = sha3_512(&innermac);
-mac = "".to_owned();
-mac.push_str(&outermacsecret);
-mac.push_str(&innermac);
-mac = sha3_256(&mac);
-
-//println!("Initial scrypt hash: {:?}",f);
-//println!("{} {} {}",f[3],f[1],f[3]);
-let ver1: usize = f[1].into();
-let ver2: usize = f[3].into();
-let mut verification = sha3_224(&(ver1 * ver2 / ver2).to_string()).to_owned();
-verification.push_str(&mac);
-verification = sha3_256(&verification);
-verification = String::from(verification);
-verification.truncate(8);
-if verbose {
-    println!("Unique message ID: {:?}",verification);
-    println!("MAC: {}",mac);
-}
-
 #[derive(Serialize, Deserialize)]
-struct Messagein {
-    messageid: String,
-    iv: String,
-    mac: String,
-    cipherbytes: String
+struct EncryptedFile {
+    method: String,
+    nonce: String,
+    ciphertext: Vec<u8>,
 }
-
-let fileout: Messagein = { Messagein {messageid: verification,iv: iv, mac: mac, cipherbytes: ciphertext}};
-let json = serde_json::to_string_pretty(&fileout).unwrap();
-println!("{}",json);
+#[derive(Serialize, Deserialize)]
+struct DecryptedFile {
+    filename: String,
+    filecontents: String,
 }
+pub fn main(password: String, filename: String, ciphertouse: String) {
+    let params = argon2::Params {
+        m_cost: 37000,
+        t_cost: 2,
+        p_cost: 1,
+        output_size: 32,
+        version: argon2::Version::default(),
+    };
+    //let key = b"h";
+    //let argon2 = Argon2::new(Some(key), 2, 3700, 2, argon2::Version::default()).unwrap();
+    let argon2 = Argon2::default();
+    let password = password.trim();
+    //println!("Pazzworde: {}",password);
+    let filename = filename.trim();
+    let mut nonce = [0; 24];
+    rand::thread_rng().fill_bytes(&mut nonce);
+    //println!("Nonce: {}",base64::encode(nonce));
+    let noncebytes = nonce.clone();
+    let mut file = File::open(&filename).unwrap();
+    let filelen: usize = file.metadata().unwrap().len().try_into().unwrap();
+    let mut buffer = vec![0; filelen];
+    file.read(&mut buffer[0..filelen])
+        .expect("Unable to read file!");
 
-
-// Exclusive OR function
-fn xor(keybyte: bool, msgbyte: bool) -> u8 {
-    if keybyte && msgbyte {
-        return 0;
-    } else if keybyte == false && msgbyte == false {
-        return 0;
-    } else {
-        return 1;
+    let password = password.as_bytes();
+    //let argon2 = Argon2::new(Some(key), 0x0FFFFFFF, 3, 2,argon2::Version::default()).unwrap();
+    //let h: argon2::password_hash::Ident.new();
+    //let salt = argon2::password_hash::Salt::new("aaaa").unwrap();
+    println!("[Exocryption] The random salt: {}",base64::encode(&nonce));
+    let salt = SaltString::new(&base64::encode(nonce)).unwrap();
+    //let salt = "abcsda".to_string();
+    //let salt = Salt::try_from(salt).unwrap();
+    println!("[Exocryption] Hashing your password, please wait..");
+    //let version = argon2::password_hash::Ident::new("argon2id");
+    let hash = argon2
+        .hash_password(
+            password,
+            None,
+            params,
+            Salt::try_from(salt.as_ref()).unwrap(),
+        )
+        .unwrap(); //(b"ggggh",&salt);
+                   //println!("Hash: {}",hash.hash.unwrap());
+    //let ciphertouse = "XChaCha20-Poly1305";
+    let b64 = hash.hash.unwrap();
+    //println!("Password: {}",b64);
+    let mut finalencryptedfile = vec![];
+    println!("[Exocryption] We are using {} as the cipher.",ciphertouse);
+    if ciphertouse.to_lowercase() == "XChaCha20-Poly1305".to_lowercase() {
+        let key = Key::from_slice(b64.as_bytes());
+        let noncebytes = noncebytes.clone();
+        let nonce = XNonce::from_slice(&noncebytes);
+        let aead = XChaCha20Poly1305::new(key);
+        /*
+        let decryptedfile = DecryptedFile {
+            filename: filename.to_string(),
+            filecontents: base64::encode(buffer),
+        };
+        let decryptedfile = serde_json::to_string(&decryptedfile).unwrap();
+        */
+        let decryptedfile = serializedecexo(filename.to_string(), buffer);
+        let attemptciphertext = aead.encrypt(nonce, decryptedfile.as_ref());
+        if attemptciphertext.is_err() {
+            println!("[Exocryption] Failed to encrypt.");
+            std::process::exit(1);
+        }
+        let ciphertext = attemptciphertext.unwrap();
+        let encryptedfile = EncryptedFile {
+            method: "XChaCha20Poly1305-Argon2".to_string(),
+            nonce: base64::encode(nonce),
+            ciphertext: ciphertext,
+        };//let encryptedfile = serde_json::to_string(&encryptedfile).unwrap();
+        finalencryptedfile = serializeexo(encryptedfile);
+    } else if ciphertouse.to_lowercase() == "AES-256-GCM-SIV".to_lowercase() {
+        //println!("AES");
+        //println!("Key!! {}",b64);
+        let key = AesKey::from_slice(b64.as_bytes());
+        let originalnonce = noncebytes.clone();
+        let noncebytes = &noncebytes.clone()[0..12];
+        //println!("Nonce!! {:?}",noncebytes);
+        let nonce = Nonce::from_slice(&noncebytes);
+        let aead = Aes256GcmSiv::new(key);
+        /*
+        let decryptedfile = DecryptedFile {
+            filename: filename.to_string(),
+            filecontents: base64::encode(buffer),
+        };
+        let decryptedfile = serde_json::to_string(&decryptedfile).unwrap();
+        */
+        let decryptedfile = serializedecexo(filename.to_string(), buffer);
+        let attemptciphertext = aead.encrypt(nonce, decryptedfile.as_ref());
+        if attemptciphertext.is_err() {
+            println!("[Exocryption] Failed to encrypt.");
+            std::process::exit(1);
+        }
+        let ciphertext = attemptciphertext.unwrap();
+        let encryptedfile = EncryptedFile {
+            method: "AES256GCMSIV-Argon2".to_string(),
+            nonce: base64::encode(originalnonce),
+            ciphertext: ciphertext,
+        };//let encryptedfile = serde_json::to_string(&encryptedfile).unwrap();
+        finalencryptedfile = serializeexo(encryptedfile);
+    }
+    let mut filefinal = "".to_owned();
+    filefinal.push_str(filename);
+    filefinal.push_str(".exo");
+    println!(
+        "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
+        filefinal
+    );
+    let mut iostring = String::new();
+    io::stdin()
+        .read_line(&mut iostring)
+        .ok()
+        .expect("Couldn't read line");
+    let iostring = iostring.trim();
+    if iostring != "" {
+        filefinal = iostring.to_string();
+    }
+    println!("[Exocryption] Writing encrypted file to {}", filefinal);
+    let fswrite = fs::write(&filefinal, finalencryptedfile);
+    if fswrite.is_err() {
+        println!("[Exocryption] Couldn't write to {}!",filefinal);
     }
 }
 
-
-// Convert to bytes
-
-fn tobytes(msg: &str) -> Vec<String> {
-    let mut var;
-    let mut out = vec!["a".to_owned(); msg.chars().count()];
-    for i in 0..msg.chars().count() {
-    let a: u8 = msg.chars().nth(i).unwrap() as u8;
-   // println!("HERE {}",a);
-    var = format!("{:b}", a).trim().to_owned();
-    var = var.chars().rev().collect::<String>();
-    for _g in 0..8 - var.chars().count() {
-        if var.chars().count() < 8 {
-            var.push_str("0");
+fn makevarint(number: usize) -> Vec<u8> {
+    let mut packetconstruct = vec![];
+    let mut varint1 = vec![0; 32];
+    number.encode_var(&mut varint1);
+    for i in 0..varint1.len() {
+        if varint1[i] != 0 {
+            packetconstruct.push(varint1[i]);
         }
     }
-
-    out[i] = var.chars().rev().collect::<String>();
-    
-    } 
-    return out;
+    return packetconstruct;
 }
 
-// Sha3 KDF
-
-fn sha3_256(input: &str) -> String {
-    let mut hasher = Sha3::sha3_256();
-
-    hasher.input_str(input);
-    return hasher.result_str();
-}
-fn sha3_512(input: &str) -> String {
-    let mut hasher = Sha3::sha3_512();
-
-    hasher.input_str(input);
-    return hasher.result_str();
+fn serializeexo(mut file: EncryptedFile) -> Vec<u8> {
+    let mut bytevec = vec![];
+    println!("Nonts: {}",file.nonce);
+    bytevec.append(&mut "\x00\x00\x0fExocryption".as_bytes().to_vec());
+    bytevec.append(&mut makevarint(file.method.as_bytes().len()));
+    bytevec.append(&mut file.method.as_bytes().to_vec());
+    bytevec.append(&mut makevarint(base64::decode(&file.nonce).unwrap().len()));
+    bytevec.append(&mut base64::decode(file.nonce).unwrap());
+    bytevec.append(&mut file.ciphertext);
+    return bytevec;
 }
 
-fn sha3_224(input: &str) -> String {
-    let mut hasher = Sha3::sha3_224();
-
-    hasher.input_str(input);
-    return hasher.result_str();
+fn serializedecexo(filename: String, mut filecontents: Vec<u8>) -> Vec<u8> {
+    let mut bytevec = vec![];
+    bytevec.append(&mut makevarint(filename.as_bytes().len()));
+    bytevec.append(&mut filename.as_bytes().to_vec());
+    bytevec.append(&mut filecontents);
+    return bytevec;
 }
