@@ -8,8 +8,7 @@ use argon2::{
 use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce}; // Or `XChaCha20Poly1305`
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
-use std::fs::{self, File};
-use std::io;
+use std::fs::{File};
 use std::io::Read;
 
 #[derive(Serialize, Deserialize)]
@@ -24,7 +23,7 @@ struct DecryptedFile {
     filecontents: Vec<u8>,
 }
 
-pub fn main(password: String, filename: String, mut ciphertouse: String, outputfile: String) {
+pub fn main(password: String, filename: String, mut ciphertouse: String) -> (Vec<u8>, String) {
     let params = argon2::Params {
         m_cost: 37000,
         t_cost: 2,
@@ -104,30 +103,7 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
         finalfilename = filefinal;
         finaldecryptedfile = decryptedfilecontents;
     }
-    let mut filefinal = "".to_owned();
-    if outputfile == "" {
-        filefinal.push_str(&finalfilename);
-        println!(
-            "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
-            filefinal
-        );
-        let mut iostring = String::new();
-        io::stdin()
-            .read_line(&mut iostring)
-            .ok()
-            .expect("Couldn't read line");
-        let iostring = iostring.trim();
-        if iostring != "" {
-            filefinal = iostring.to_string();
-        }
-        println!("[Exocryption] Writing encrypted file to {}", filefinal);
-    } else {
-        filefinal = outputfile;
-    }
-    let fswrite = fs::write(&filefinal, finaldecryptedfile);
-    if fswrite.is_err() {
-        println!("[Exocryption] Couldn't write to {}!",filefinal);
-    }
+    return (finaldecryptedfile, finalfilename);
 }
 
 fn deserializeexo(mut file: Vec<u8>) -> EncryptedFile {

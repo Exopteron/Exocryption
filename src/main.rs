@@ -103,16 +103,61 @@ fn main() {
         helpfn();
         std::process::exit(1);
     }
+    let mut finale;
+    let mut finalename: String = "".to_owned();
     if g == "Encrypt" {
-        encrypt::main(password, file, cipher, outfile);
+        finale = encrypt::main(password, file.clone(), cipher);
     } else if g == "Decrypt" {
-        decrypt::main(password, file, cipher, outfile);
+        let ihatemself = decrypt::main(password, file.clone(), cipher);
+        finale = ihatemself.0;
+        finalename = ihatemself.1;
     } else if g == "" {
+        finale = vec![];
         println!("No mode selected.");
         helpfn();
+    } else {
+        finale = vec![];
+        finale.pop();
+        std::process::exit(1);
+    }
+    let mut filefinal = "".to_owned();
+    let mode;
+    if g == "Encrypt" {
+        mode = "encrypted";
+    } else {
+        mode = "decrypted";
+    }
+    if outfile == "" {
+        if g == "Encrypt" {
+            filefinal.push_str(&file);
+            filefinal.push_str(".exo");
+        } else {
+            filefinal.push_str(&finalename);
+        }
+        println!(
+            "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
+            filefinal
+        );
+        let mut iostring = String::new();
+        std::io::stdin()
+            .read_line(&mut iostring)
+            .ok()
+            .expect("Couldn't read line");
+        let iostring = iostring.trim();
+        if iostring != "" {
+            filefinal = iostring.to_string();
+        }
+        println!("[Exocryption] Writing {} file to {}", mode, filefinal);
+    } else {
+        filefinal = outfile;
+    }
+    let fswrite = std::fs::write(&filefinal, finale);
+    if fswrite.is_err() {
+        println!("[Exocryption] Couldn't write to {}!", filefinal);
     }
 }
 
 fn helpfn() {
     println!("Usage: exocryption [-c (cipher (choose between AES-256-GCM-SIV and XChaCha20-Poly1305, AES-256-GCM-SIV Default.) )] [[-e] [-encrypt]] | [[-d [-decrypt]] -p [password] -f [file] -o [output file]");
+    std::process::exit(0);
 }
