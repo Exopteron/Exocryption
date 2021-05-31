@@ -1,8 +1,8 @@
-mod encrypt;
 mod decrypt;
+mod encrypt;
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 fn main() {
-    println!("[Exocryption] Welcome to Exocryption v{}!",VERSION);
+    println!("[Exocryption] Welcome to Exocryption v{}!", VERSION);
     if cfg!(windows) {
         println!("[Exocryption] We have detected you are running on windows. You may have issues as this was built on Linux. Please report any issues to the github!");
     }
@@ -12,16 +12,18 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut opts = getopts::Options::new();
     let mut g = "";
-    opts.optflag("e","encrypt","encrypt text");
-    opts.optflag("d","decrypt","decrypt text");
-    opts.optflag("h","help","get help");
-    opts.optopt("f","file","select file","FILE");
-    opts.optopt("p","password","use this password","\"text\"");
-    opts.optopt("c","cipher","select cipher","CIPHER");
-    opts.optopt("o","output","select output file","FILE");
+    opts.optflag("e", "encrypt", "encrypt text");
+    opts.optflag("d", "decrypt", "decrypt text");
+    opts.optflag("h", "help", "get help");
+    opts.optopt("f", "file", "select file", "FILE");
+    opts.optopt("p", "password", "use this password", "\"text\"");
+    opts.optopt("c", "cipher", "select cipher", "CIPHER");
+    opts.optopt("o", "output", "select output file", "FILE");
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
-        Err(f) => { panic!("{}",f.to_string()) } 
+        Ok(m) => m,
+        Err(f) => {
+            panic!("{}", f.to_string())
+        }
     };
     if matches.opt_present("h") {
         //println!("If you run with only the flag \"-g\", this will begin the key exchange process.");
@@ -50,7 +52,6 @@ fn main() {
             println!("[Exocryption] Unknown mode.");
             std::process::exit(1);
         }
-
     }
     let userpassword = matches.opt_str("p");
     let password;
@@ -96,19 +97,12 @@ fn main() {
         Some(x) => x,
         None => "AES-256-GCM-SIV".to_string(),
     };
-    if cipher.to_lowercase() != "XChaCha20-Poly1305".to_lowercase() && cipher.to_lowercase() != "AES-256-GCM-SIV".to_lowercase() {
+    if cipher.to_lowercase() != "XChaCha20-Poly1305".to_lowercase()
+        && cipher.to_lowercase() != "AES-256-GCM-SIV".to_lowercase()
+    {
         helpfn();
         std::process::exit(1);
     }
-    /*
-    let _input1 = if !matches.free.is_empty() {
-        matches.free[0].clone()
-    } else {
-        println!("Key error");
-        return;
-    };
-    */
-
     if g == "Encrypt" {
         encrypt::main(password, file, cipher, outfile);
     } else if g == "Decrypt" {

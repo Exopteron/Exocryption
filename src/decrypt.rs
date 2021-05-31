@@ -32,16 +32,11 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
         output_size: 32,
         version: argon2::Version::default(),
     };
-    //let key = b"h";
-    //let argon2 = Argon2::new(Some(key), 2, 3700, 2, argon2::Version::default()).unwrap();
     let argon2 = Argon2::default();
-    //let nonce = "7j5TpVANzNjzaXebe3pUfN2fWdI33A3c";
     let mut file = File::open(&filename).unwrap();
-    //let filelen: usize = file.metadata().unwrap().len().try_into().unwrap();
     let mut buffer = vec![];
     file.read_to_end(&mut buffer)
-        .expect("Unable to read file"); //(&mut buffer[0..filelen]).expect("Unable to read file!");
-    //let encryptedfile: EncryptedFile = serde_json::from_str(&buffer).unwrap();
+        .expect("Unable to read file");
     let encryptedfile = deserializeexo(buffer);
     let nonce = encryptedfile.nonce;
     if encryptedfile.method.contains("AES256GCMSIV") {
@@ -51,30 +46,12 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
         println!("[Exocryption] Automatically detected as XChaCha20-Poly1305");
         ciphertouse = "XChaCha20-Poly1305".to_string();
     }
-    //println!("Nonce: {}",nonce);
-    /*
-    let nonce = base64::decode(nonce);
-    if nonce.is_err() {
-        println!("[Exocryption] Nonce is invalid base64.");
-        std::process::exit(1);
-    }
-    let nonce = nonce.unwrap();
-    */
     let noncebytes = nonce.clone();
     let buffer = encryptedfile.ciphertext;
-    //println!("Encrypted file: {}",buffer);
     let buffer = buffer;
-    //let buffer = base64::decode(buffer.trim()).unwrap();
-    //println!("Pazzworde: {}",password);
     let password = password.trim().as_bytes();
-    //let argon2 = Argon2::new(Some(key), 0x0FFFFFFF, 3, 2,argon2::Version::default()).unwrap();
-    //let h: argon2::password_hash::Ident.new();
-    //let salt = argon2::password_hash::Salt::new("aaaa").unwrap();
     println!("[Exocryption] The random salt: {}", base64::encode(&nonce));
     let salt = SaltString::new(&base64::encode(nonce)).unwrap();
-    //let salt = "abcsda".to_string();
-    //let salt = Salt::try_from(salt).unwrap();
-    //let version = argon2::password_hash::Ident::new("argon2id");
     println!("[Exocryption] Hashing your password, please wait..");
     let hash = argon2
         .hash_password(
@@ -83,8 +60,7 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
             params,
             Salt::try_from(salt.as_ref()).unwrap(),
         )
-        .unwrap(); //(b"ggggh",&salt);
-                   //println!("Hash: {}",hash.hash.unwrap());
+        .unwrap();
     let b64 = hash.hash.unwrap();
     let mut finaldecryptedfile = vec![];
     let mut finalfilename = "".to_owned();
@@ -109,13 +85,10 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
         finalfilename = filefinal;
         finaldecryptedfile = decryptedfilecontents;
     } else if ciphertouse.to_lowercase() == "AES-256-GCM-SIV".to_lowercase() {
-        //println!("Key!! {}",b64);
         let key = AesKey::from_slice(b64.as_bytes());
         let noncebytes = &noncebytes.clone()[0..12];
-        //println!("Nonce!! {:?}",noncebytes);
         let nonce = Nonce::from_slice(&noncebytes);
         let aead = Aes256GcmSiv::new(key);
-        //let decryptedfile = serde_json::to_string(&decryptedfile).unwrap();
         let attemptplaintext = aead.decrypt(nonce, buffer.as_ref());
         let plaintext;
         if attemptplaintext.is_err() {
@@ -155,19 +128,6 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
     if fswrite.is_err() {
         println!("[Exocryption] Couldn't write to {}!",filefinal);
     }
-    /*
-    let key = Key::from_slice(b64.as_bytes());
-    let mut noncebytes = noncebytes.clone();
-    let nonce = XNonce::from_slice(&noncebytes);
-    let aead = XChaCha20Poly1305::new(key);
-
-    let ciphertext = aead.decrypt(nonce, buffer.as_ref()).expect("Failed to decrypt");
-    let ciphertext: DecryptedFile = serde_json::from_str(&String::from_utf8_lossy(&ciphertext)).unwrap();
-    let decryptedfile = ciphertext.filecontents;
-    let mut filefinal = ciphertext.filename;
-    println!("Writing to {}",filefinal);
-    fs::write(filename,decryptedfile).expect("Unable to write file!");
-    */
 }
 
 fn deserializeexo(mut file: Vec<u8>) -> EncryptedFile {
