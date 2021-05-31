@@ -40,10 +40,10 @@ pub fn main(password: String, filename: String, mut ciphertouse: String, outputf
     let encryptedfile = deserializeexo(buffer);
     let nonce = encryptedfile.nonce;
     if encryptedfile.method.contains("AES256GCMSIV") {
-        println!("[Exocryption] Automatically detected as AES-256-GCM-SIV");
+        println!("[Exocryption] Automatically detected as AES-256-GCM-SIV!");
         ciphertouse = "AES-256-GCM-SIV".to_string();
     } else if encryptedfile.method.contains("XChaCha20Poly1305") {
-        println!("[Exocryption] Automatically detected as XChaCha20-Poly1305");
+        println!("[Exocryption] Automatically detected as XChaCha20-Poly1305!");
         ciphertouse = "XChaCha20-Poly1305".to_string();
     }
     let noncebytes = nonce.clone();
