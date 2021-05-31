@@ -1,5 +1,6 @@
 mod decrypt;
 mod encrypt;
+mod genidentity;
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 fn main() {
     println!("[Exocryption Asymmetric Test] Welcome to Exocryption v{}!", VERSION);
@@ -15,6 +16,7 @@ fn main() {
     opts.optflag("e", "encrypt", "encrypt text");
     opts.optflag("d", "decrypt", "decrypt text");
     opts.optflag("h", "help", "get help");
+    opts.optflag("", "gen-identity", "generate identity key");
     opts.optopt("f", "file", "select file", "FILE");
     opts.optopt("p", "password", "use this password", "\"text\"");
     opts.optopt("c", "cipher", "select cipher", "CIPHER");
@@ -35,6 +37,10 @@ fn main() {
     }
     if matches.opt_present("d") {
         g = "Decrypt";
+    }
+    if matches.opt_present("gen-identity") {
+        genidentity::main();
+        std::process::exit(0);
     }
     if g == "" {
         println!("[Exocryption] No mode given. Please give mode.. (enc/dec)");
