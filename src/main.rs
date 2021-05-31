@@ -2,7 +2,7 @@ mod decrypt;
 mod encrypt;
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 fn main() {
-    println!("[Exocryption] Welcome to Exocryption v{}!", VERSION);
+    println!("[Exocryption Asymmetric Test] Welcome to Exocryption v{}!", VERSION);
     if cfg!(windows) {
         println!("[Exocryption] We have detected you are running on windows. You may have issues as this was built on Linux. Please report any issues to the github!");
     }
