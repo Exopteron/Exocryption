@@ -77,7 +77,7 @@ pub fn main(password: String, filename: String, ciphertouse: String) -> Vec<u8> 
             nonce: base64::encode(nonce),
             ciphertext: ciphertext,
         };
-        finalencryptedfile = serializeexo(encryptedfile);
+        finalencryptedfile = encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
     } else if ciphertouse.to_lowercase() == "AES-256-GCM-SIV".to_lowercase() {
         let key = AesKey::from_slice(b64.as_bytes());
         let originalnonce = noncebytes.clone();
@@ -96,7 +96,7 @@ pub fn main(password: String, filename: String, ciphertouse: String) -> Vec<u8> 
             nonce: base64::encode(originalnonce),
             ciphertext: ciphertext,
         };
-        finalencryptedfile = serializeexo(encryptedfile);
+        finalencryptedfile = encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
     }
     return finalencryptedfile;
 }
@@ -112,16 +112,62 @@ fn makevarint(number: usize) -> Vec<u8> {
     }
     return packetconstruct;
 }
-
-fn serializeexo(mut file: EncryptedFile) -> Vec<u8> {
+fn encheaderexo(mut file: EncryptedFile, password: String) -> Vec<u8> {
+    use aes::Aes256;
+    use block_modes::block_padding::Pkcs7;
+    use block_modes::{BlockMode, Cbc};
+    use hmac::{Hmac, Mac, NewMac};
+    use sha3::Sha3_256;
+    type HmacSha3_256 = Hmac<Sha3_256>;
+    type Aes256Cbc = Cbc<Aes256, Pkcs7>;
+    let mut iv = vec![0; 16];
+    rand::thread_rng().fill_bytes(&mut iv);
+    let params = argon2::Params {
+        m_cost: 37000,
+        t_cost: 2,
+        p_cost: 1,
+        output_size: 32,
+        version: argon2::Version::default(),
+    };
+    let argon2 = Argon2::default();
+    let password = password.trim().as_bytes();
+    let mut hashiv = sha3_256(iv.clone());
+    hashiv.truncate(24);
+    let salt = SaltString::new(&base64::encode(&hashiv)).unwrap();
+    //println!("[Exocryption] Hashing your password, please wait..");
+    let hash = argon2
+        .hash_password(
+            password,
+            None,
+            params,
+            Salt::try_from(salt.as_ref()).unwrap(),
+        )
+        .unwrap();
+    let b64 = hash.hash.unwrap();
+    let key = b64.as_bytes();
     let mut bytevec = vec![];
-    println!("Nonts: {}", file.nonce);
-    bytevec.append(&mut "\x00\x00\x0fExocryption".as_bytes().to_vec());
-    bytevec.append(&mut makevarint(file.method.as_bytes().len()));
-    bytevec.append(&mut file.method.as_bytes().to_vec());
-    bytevec.append(&mut makevarint(base64::decode(&file.nonce).unwrap().len()));
-    bytevec.append(&mut base64::decode(file.nonce).unwrap());
-    bytevec.append(&mut file.ciphertext);
+    //println!("Nonts: {}", file.nonce);
+    //println!("Key: {:?} IV: {:?}",&key,&iv);
+    let cipher = Aes256Cbc::new_from_slices(&key, &iv).unwrap();
+    let mut buffer = vec![0];
+    buffer.append(&mut makevarint(file.method.as_bytes().to_vec().len()));
+    buffer.append(&mut file.method.as_bytes().to_vec());
+    buffer.append(&mut makevarint(base64::decode(&file.nonce).unwrap().len()));
+    buffer.append(&mut base64::decode(file.nonce).unwrap());
+    let methodandnonceenc = &cipher.encrypt_vec(&mut buffer);
+    let mut hmac = HmacSha3_256::new_from_slice(&sha3_256(key.to_vec())).unwrap();
+    bytevec.append(&mut "\x00\x00\x0fExocryption2".as_bytes().to_vec());
+    let mut superbytevec = vec![];
+    superbytevec.append(&mut makevarint(methodandnonceenc.len()));
+    superbytevec.append(&mut methodandnonceenc.to_vec());
+    superbytevec.append(&mut file.ciphertext);
+    hmac.update(&superbytevec);
+    //println!("Updating with: {:?}", &superbytevec);
+    let hmac = hmac.finalize();
+    let hmac = hmac.into_bytes();
+    bytevec.append(&mut hmac.to_vec());
+    bytevec.append(&mut iv.to_vec());
+    bytevec.append(&mut superbytevec);
     return bytevec;
 }
 
@@ -131,4 +177,11 @@ fn serializedecexo(filename: String, mut filecontents: Vec<u8>) -> Vec<u8> {
     bytevec.append(&mut filename.as_bytes().to_vec());
     bytevec.append(&mut filecontents);
     return bytevec;
+}
+
+fn sha3_256(input: Vec<u8>) -> Vec<u8> {
+    use sha3::{Digest, Sha3_256};
+    let mut hasher = Sha3_256::new();
+    hasher.update(input);
+    return hasher.finalize().to_vec();
 }

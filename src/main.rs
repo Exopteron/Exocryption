@@ -6,6 +6,7 @@ fn main() {
     if cfg!(windows) {
         println!("[Exocryption] We have detected you are running on windows. You may have issues as this was built on Linux. Please report any issues to the github!");
     }
+    println!("Updates from v0.0.2c\n-- New encrypted file format (Exocryptionv2)\n-- HMAC of the entire file (including header), unlike before when only the encrypted contents were authenticated\n-- Header is encrypted with AES-256-CBC-HMAC always, which contains the encryption method and nonce.\n");
     println!("Updates from v0.0.2b\n-- Added output file flag -o\n");
     println!("Updates from v0.0.2\n-- Final optimizations, released to GitHub!\n");
     println!("Updates from v0.0.1:\n-- New encoding format for smaller file sizes\n-- Better error handling\n-- More interactive interactive mode.\n");
