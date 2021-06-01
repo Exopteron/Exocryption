@@ -23,7 +23,7 @@ For key derivation, Argon2id is used with the parameters m: 37000, t: 2, p: 1.
 
 The format of the encrypted files is designed to take up a tiny amount of extra space. (Pretty much equal encrypted/decrypted file sizes as opposed to the double-base64'd JSONified old format which more than doubled file sizes.)
 
-Format:
+Legacy Format:
 First, `\x00\x00\x0fExocryption` is appended as the header. The program will check for this just to make sure it's not attempting decryption on something that isn't encrypted. (This definitely does not protect against malicious attacks, but it's not designed to.)
 
 Next, a variable length integer (VarInt) is appended with the length of the method used. (In this case this will either be AES256GCMSIV-Argon2 or XChaCha20Poly1305-Argon2.)
@@ -33,6 +33,11 @@ Next is another VarInt of the length of the nonce. Then the nonce is appended.
 Then, the rest of the file are the encrypted bytes.
 
 What gets encrypted is the file and the file name. This means if you change the encrypted file's name, you can still preserve the original name within.
+
+Exocryptionv2 Format:
+
+-- to be written
+
 
 Usage:
 Arguments are:
