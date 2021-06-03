@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
+#[path = "weirdrng.rs"]
+mod weirdrng;
 
 #[derive(Serialize, Deserialize)]
 struct EncryptedFile {
@@ -36,8 +38,7 @@ pub fn main(password: String, filename: String, ciphertouse: String) -> Vec<u8> 
     let argon2 = Argon2::default();
     let password = password.trim();
     let filename = filename.trim();
-    let mut nonce = [0; 24];
-    rand::thread_rng().fill_bytes(&mut nonce);
+    let mut nonce = weirdrng::get_random_bytes(24);
     let noncebytes = nonce.clone();
     let mut file = File::open(&filename).unwrap();
     let filelen: usize = file.metadata().unwrap().len().try_into().unwrap();
@@ -120,8 +121,7 @@ fn encheaderexo(mut file: EncryptedFile, password: String) -> Vec<u8> {
     use sha3::Sha3_256;
     type HmacSha3_256 = Hmac<Sha3_256>;
     type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-    let mut iv = vec![0; 16];
-    rand::thread_rng().fill_bytes(&mut iv);
+    let mut iv = weirdrng::get_random_bytes(16);
     let params = argon2::Params {
         m_cost: 37000,
         t_cost: 2,
