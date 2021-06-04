@@ -34,9 +34,7 @@ Then, the rest of the file are the encrypted bytes.
 
 What gets encrypted is the file and the file name. This means if you change the encrypted file's name, you can still preserve the original name within.
 
-Exocryptionv2 Format:
-
--- to be written
+Exocryptionv2 Format: (just look in the serialization function in the encrypt module)
 
 
 Usage:
