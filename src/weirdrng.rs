@@ -1,18 +1,17 @@
 use aes::cipher::{
-    generic_array::GenericArray, BlockCipher, BlockDecrypt, BlockEncrypt, NewBlockCipher,
+    generic_array::GenericArray, BlockEncrypt, NewBlockCipher,
 };
 use aes::Aes256;
 use rand_chacha::rand_core::RngCore;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha20Rng;
-use std::io::{Read, Write};
 
 pub fn get_random_bytes(amount: usize) -> Vec<u8> {
     let mut chacharng = ChaCha20Rng::from_entropy();
     let mut k = vec![0; 32];
     chacharng.fill_bytes(&mut k);
     let mut fortuna = fortuna(k, amount + 24);
-    for i in 0..24 {
+    for _ in 0..24 {
         fortuna.remove(0);
     }
     let mut chacha = vec![0; amount];
@@ -21,19 +20,19 @@ pub fn get_random_bytes(amount: usize) -> Vec<u8> {
     return output;
 }
 
-fn fortuna(mut k: Vec<u8>, amount: usize) -> Vec<u8> {
+fn fortuna(k: Vec<u8>, amount: usize) -> Vec<u8> {
     let mut c = 1;
     let mut k = sha3_256(k);
     return generaterandomdata(&mut k, &mut c, amount);
-    fn generateblocks(capk: &mut Vec<u8>, mut c: &mut usize, k: usize) -> Vec<u8> {
+    fn generateblocks(capk: &mut Vec<u8>, c: &mut usize, k: usize) -> Vec<u8> {
         let mut r = vec![];
-        for i in 0..k {
+        for _ in 0..k {
             assert_eq!(capk.len(), 32);
             let key = GenericArray::from_slice(&capk);
             let cipher = Aes256::new(&key);
             let mut superc = c.to_le_bytes().to_vec();
             if superc.len() < 16 {
-                for i in 0..16 - superc.len() {
+                for _ in 0..16 - superc.len() {
                     superc.push(0x00);
                 }
             }
@@ -46,8 +45,8 @@ fn fortuna(mut k: Vec<u8>, amount: usize) -> Vec<u8> {
         return r;
     }
 
-    fn generaterandomdata(capk: &mut Vec<u8>, mut c: &mut usize, n: usize) -> Vec<u8> {
-        let mut r = vec![];
+    fn generaterandomdata(capk: &mut Vec<u8>, c: &mut usize, n: usize) -> Vec<u8> {
+        let r;
         let coolr = generateblocks(&mut capk.clone(), &mut c.clone(), (n / 16) + 1);
         //println!("Cool R: {:?}",coolr);
         r = coolr[0..n].to_vec();

@@ -135,6 +135,13 @@ fn main() {
         } else {
             filefinal.push_str(&finalename);
         }
+        let file2: Vec<&str>;
+        if cfg!(windows) {
+            file2 = filefinal.split(r#"\"#).collect();
+        } else {
+            file2 = filefinal.split("/").collect();
+        }
+        filefinal = file2.last().unwrap().to_string();
         println!(
             "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
             filefinal
