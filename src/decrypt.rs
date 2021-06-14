@@ -1,6 +1,5 @@
 use aes_gcm::aead::{Aead, NewAead};
 use aes_gcm::{Aes256Gcm, Key as GCMKey, Nonce as GCMNonce}; // Or `Aes128Gcm`
-use aes_gcm_siv::aead::{Aead as AesAead, NewAead as AesNewAead};
 use aes_gcm_siv::{Aes256GcmSiv, Key as AesKey, Nonce}; // Or `Aes128GcmSiv`
 use argon2::{
     password_hash::{PasswordHasher, Salt, SaltString},
@@ -292,7 +291,6 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     use aes::Aes256;
     use block_modes::block_padding::Pkcs7;
     use block_modes::{BlockMode, Cbc};
-    use std::convert::TryInto;
     type Aes256Cbc = Cbc<Aes256, Pkcs7>;
     let mut header = vec![];
     for _ in 0..15 {
@@ -353,7 +351,7 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
         std::process::exit(1);
     }
     //println!("{}",header);
-    let mut finalen = NewVint::u32_from_bytes(&mut file);
+    let finalen = NewVint::u32_from_bytes(&mut file);
     let mut largebytestepped = 0 as usize;
     let methodandnonceenc = &file[largebytestepped..largebytestepped + finalen as usize];
     let mut methodandnonceenc = methodandnonceenc.to_vec();
@@ -364,19 +362,19 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     let cipher = Aes256Cbc::new_from_slices(&key, &iv).unwrap();
     let mut methodandnonceenc = cipher.decrypt(&mut methodandnonceenc).unwrap().to_vec();
     let mut largebytestepped = 0;
-    let mut g = NewVint::u32_from_bytes(&mut methodandnonceenc);
+    let g = NewVint::u32_from_bytes(&mut methodandnonceenc);
     largebytestepped += g as usize;
-    for i in 0..largebytestepped {
+    for _ in 0..largebytestepped {
         methodandnonceenc.remove(0);
     }
-    let mut finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
+    let finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
     let method = &methodandnonceenc[..finalen].to_vec();
     let method = method.to_vec();
     largebytestepped += finalen;
-    for i in 0..largebytestepped {
+    for _ in 0..largebytestepped {
         methodandnonceenc.remove(0);
     }
-    let mut finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
+    let finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
     let nonce = &methodandnonceenc[..finalen].to_vec();
     let nonce = nonce.to_vec();
     let method = String::from_utf8_lossy(&method).to_string();

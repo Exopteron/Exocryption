@@ -4,13 +4,16 @@ pub struct VarInt {
     number: u32
 }
 impl VarInt {
+    #[allow(dead_code)]
     pub fn new(number: u32) -> VarInt {
         return VarInt {number: number};
     }
+    #[allow(dead_code)]
     pub fn new_as_bytes(number: u32) -> Vec<u8> {
         let mut vint = VarInt {number: number};
         return vint.into_bytes();
     }
+    #[allow(dead_code)]
     pub fn u32_from_bytes(mut input: &mut Vec<u8>) -> u32 {
         let vint = VarInt::from_bytes(&mut input);
         return vint.number;
@@ -31,7 +34,7 @@ impl VarInt {
         use std::convert::TryInto;
         let mut inputreader = std::io::Cursor::new(inputvec.clone());
         let mut input = vec![0; 1];
-        inputreader.read_exact(&mut input);
+        inputreader.read_exact(&mut input).expect("Failed to read");
         let mut fullbyte: Vec<String> = vec![];
         let mut current = 0;
         let mut bytesstepped = 0;
@@ -80,7 +83,7 @@ impl VarInt {
             .unwrap();
         largebytestepped+=bytesstepped;
         //largebytestepped+=finalen;
-        for i in 0..largebytestepped {
+        for _ in 0..largebytestepped {
             inputvec.remove(0);
         }
         return VarInt {number: finalen};

@@ -1,7 +1,6 @@
 use aes_gcm_siv::aead::{Aead as AesAead, NewAead as AesNewAead};
 use aes_gcm_siv::{Aes256GcmSiv, Key as AesKey, Nonce};
-use aes_gcm::{Aes256Gcm, Key as GCMKey, Nonce as GCMNonce}; // Or `Aes128Gcm`
-use aes_gcm::aead::{Aead, NewAead};
+use aes_gcm::{Aes256Gcm, Key as GCMKey, Nonce as GCMNonce};
 use argon2::{
     password_hash::{PasswordHasher, Salt, SaltString},
     Argon2,
