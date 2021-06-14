@@ -100,6 +100,7 @@ fn main() {
     };
     if cipher.to_lowercase() != "XChaCha20-Poly1305".to_lowercase()
         && cipher.to_lowercase() != "AES-256-GCM-SIV".to_lowercase()
+        && cipher.to_lowercase() != "AES-256-GCM".to_lowercase()
     {
         helpfn();
         std::process::exit(1);

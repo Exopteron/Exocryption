@@ -1,5 +1,7 @@
 use aes_gcm_siv::aead::{Aead as AesAead, NewAead as AesNewAead};
 use aes_gcm_siv::{Aes256GcmSiv, Key as AesKey, Nonce};
+use aes_gcm::{Aes256Gcm, Key as GCMKey, Nonce as GCMNonce}; // Or `Aes128Gcm`
+use aes_gcm::aead::{Aead, NewAead};
 use argon2::{
     password_hash::{PasswordHasher, Salt, SaltString},
     Argon2,
@@ -84,6 +86,26 @@ pub fn main(password: String, filename: String, ciphertouse: String) -> Vec<u8> 
         let encryptedfile = EncryptedFile {
             method: "XChaCha20Poly1305-Argon2".to_string(),
             nonce: base64::encode(nonce),
+            ciphertext: ciphertext,
+        };
+        finalencryptedfile =
+            encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
+    } else if ciphertouse.to_lowercase() == "AES-256-GCM".to_lowercase() {
+        let key = GCMKey::from_slice(b64.as_bytes());
+        let originalnonce = noncebytes.clone();
+        let noncebytes = &noncebytes.clone()[0..12];
+        let nonce = GCMNonce::from_slice(&noncebytes);
+        let aead = Aes256Gcm::new(key);
+        let decryptedfile = serializedecexo(filename.to_string(), buffer);
+        let attemptciphertext = aead.encrypt(nonce, decryptedfile.as_ref());
+        if attemptciphertext.is_err() {
+            println!("[Exocryption] Failed to encrypt.");
+            std::process::exit(1);
+        }
+        let ciphertext = attemptciphertext.unwrap();
+        let encryptedfile = EncryptedFile {
+            method: "AES256GCM-Argon2".to_string(),
+            nonce: base64::encode(originalnonce),
             ciphertext: ciphertext,
         };
         finalencryptedfile =

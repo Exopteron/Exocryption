@@ -1,3 +1,5 @@
+use aes_gcm::aead::{Aead, NewAead};
+use aes_gcm::{Aes256Gcm, Key as GCMKey, Nonce as GCMNonce}; // Or `Aes128Gcm`
 use aes_gcm_siv::aead::{Aead as AesAead, NewAead as AesNewAead};
 use aes_gcm_siv::{Aes256GcmSiv, Key as AesKey, Nonce}; // Or `Aes128GcmSiv`
 use argon2::{
@@ -8,7 +10,7 @@ use argon2::{
 use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce}; // Or `XChaCha20Poly1305`
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
-use std::fs::{File};
+use std::fs::File;
 use std::io::Read;
 #[path = "varint.rs"]
 mod varint;
@@ -36,13 +38,22 @@ pub fn main(password: String, filename: String, mut ciphertouse: String) -> (Vec
     let argon2 = Argon2::default();
     let mut file = File::open(&filename).unwrap();
     let mut buffer = vec![];
-    file.read_to_end(&mut buffer)
-        .expect("Unable to read file");
-    let mut encryptedfile = EncryptedFile {method: "G".to_string(), nonce: [2].to_vec(), ciphertext: [5].to_vec()};
-    if String::from_utf8_lossy(&buffer[0..15]).to_string().contains(&format!("\x00\x00\x0fExocryption2")) {
+    file.read_to_end(&mut buffer).expect("Unable to read file");
+    let mut encryptedfile = EncryptedFile {
+        method: "G".to_string(),
+        nonce: [2].to_vec(),
+        ciphertext: [5].to_vec(),
+    };
+    if String::from_utf8_lossy(&buffer[0..15])
+        .to_string()
+        .contains(&format!("\x00\x00\x0fExocryption2"))
+    {
         println!("[Exocryption] Detected as Exocryptionv2 format!");
         encryptedfile = deserializeencheaderexo(buffer, password.clone());
-    } else if String::from_utf8_lossy(&buffer[0..14]).to_string().contains(&format!("\x00\x00\x0fExocryption")) {
+    } else if String::from_utf8_lossy(&buffer[0..14])
+        .to_string()
+        .contains(&format!("\x00\x00\x0fExocryption"))
+    {
         println!("[Exocryption] Detected as Exocryption Legacy format.");
         encryptedfile = deserializeexo(buffer);
     } else {
@@ -52,11 +63,14 @@ pub fn main(password: String, filename: String, mut ciphertouse: String) -> (Vec
     if encryptedfile.method.contains("AES256GCMSIV") {
         println!("[Exocryption] Automatically detected as AES-256-GCM-SIV!");
         ciphertouse = "AES-256-GCM-SIV".to_string();
+    } else if encryptedfile.method.contains("AES256GCM") {
+        println!("[Exocryption] Automatically detected as AES-256-GCM!");
+        ciphertouse = "AES-256-GCM".to_string();
     } else if encryptedfile.method.contains("XChaCha20Poly1305") {
         println!("[Exocryption] Automatically detected as XChaCha20-Poly1305!");
         ciphertouse = "XChaCha20-Poly1305".to_string();
     } else {
-        println!("Wtf: {}",encryptedfile.method);
+        println!("Wtf: {}", encryptedfile.method);
     }
     let noncebytes = nonce.clone();
     let buffer = encryptedfile.ciphertext;
@@ -91,7 +105,10 @@ pub fn main(password: String, filename: String, mut ciphertouse: String) -> (Vec
             plaintext = attemptplaintext.unwrap();
         }
         let (filename, filecontents) = deserializedecexo(plaintext);
-        let decryptedfile = DecryptedFile {filename: filename, filecontents: filecontents};
+        let decryptedfile = DecryptedFile {
+            filename: filename,
+            filecontents: filecontents,
+        };
         let decryptedfilecontents = decryptedfile.filecontents;
         let filefinal = decryptedfile.filename;
         finalfilename = filefinal;
@@ -110,7 +127,33 @@ pub fn main(password: String, filename: String, mut ciphertouse: String) -> (Vec
             plaintext = attemptplaintext.unwrap();
         }
         let (filename, filecontents) = deserializedecexo(plaintext);
-        let decryptedfile = DecryptedFile {filename: filename, filecontents: filecontents};
+        let decryptedfile = DecryptedFile {
+            filename: filename,
+            filecontents: filecontents,
+        };
+        let decryptedfilecontents = decryptedfile.filecontents;
+        let filefinal = decryptedfile.filename;
+        finalfilename = filefinal;
+        finaldecryptedfile = decryptedfilecontents;
+    }
+    else if ciphertouse.to_lowercase() == "AES-256-GCM".to_lowercase() {
+        let key = GCMKey::from_slice(b64.as_bytes());
+        let noncebytes = &noncebytes.clone()[0..12];
+        let nonce = GCMNonce::from_slice(&noncebytes);
+        let aead = Aes256Gcm::new(key);
+        let attemptplaintext = aead.decrypt(nonce, buffer.as_ref());
+        let plaintext;
+        if attemptplaintext.is_err() {
+            println!("[Exocryption] Could not decrypt. Incorrect password/message tampering?");
+            std::process::exit(1);
+        } else {
+            plaintext = attemptplaintext.unwrap();
+        }
+        let (filename, filecontents) = deserializedecexo(plaintext);
+        let decryptedfile = DecryptedFile {
+            filename: filename,
+            filecontents: filecontents,
+        };
         let decryptedfilecontents = decryptedfile.filecontents;
         let filefinal = decryptedfile.filename;
         finalfilename = filefinal;
@@ -172,9 +215,10 @@ fn deserializeexo(mut file: Vec<u8>) -> EncryptedFile {
         .unwrap()
         .try_into()
         .unwrap();
-    largebytestepped+=bytesstepped;
-    let method = String::from_utf8_lossy(&file[largebytestepped..largebytestepped + finalen]).to_string();
-    largebytestepped+=finalen;
+    largebytestepped += bytesstepped;
+    let method =
+        String::from_utf8_lossy(&file[largebytestepped..largebytestepped + finalen]).to_string();
+    largebytestepped += finalen;
     let mut fullbyte: Vec<String> = vec![];
     let mut current = largebytestepped;
     let mut bytesstepped = 0;
@@ -220,10 +264,14 @@ fn deserializeexo(mut file: Vec<u8>) -> EncryptedFile {
     largebytestepped += bytesstepped;
     let nonce = &file[largebytestepped..largebytestepped + finalen].to_vec();
     let nonce = nonce.to_vec();
-    largebytestepped+=finalen;
+    largebytestepped += finalen;
     let ciphertext = &file[largebytestepped..file.len()].to_vec();
     let ciphertext = ciphertext.to_vec();
-    let finalfile = EncryptedFile {method: method, nonce: nonce, ciphertext: ciphertext};
+    let finalfile = EncryptedFile {
+        method: method,
+        nonce: nonce,
+        ciphertext: ciphertext,
+    };
     return finalfile;
     /*
     let mut bytevec = vec![];
@@ -259,7 +307,10 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     fullfile.reverse();
     let header = String::from_utf8_lossy(&header).to_string();
     if !header.contains(&format!("\x00\x00\x0fExocryption2")) {
-        println!("[Exocryption] Invalid or corrupted file. Header: {}",header);
+        println!(
+            "[Exocryption] Invalid or corrupted file. Header: {}",
+            header
+        );
         std::process::exit(1);
     }
     let theirhmac = &file[0..32];
@@ -306,7 +357,7 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     let mut largebytestepped = 0 as usize;
     let methodandnonceenc = &file[largebytestepped..largebytestepped + finalen as usize];
     let mut methodandnonceenc = methodandnonceenc.to_vec();
-    largebytestepped+=finalen as usize;
+    largebytestepped += finalen as usize;
     let ciphertext = &file[largebytestepped..].to_vec();
     let ciphertext = ciphertext.to_vec();
     //println!("Key: {:?} IV: {:?}",&key,&iv);
@@ -314,14 +365,14 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     let mut methodandnonceenc = cipher.decrypt(&mut methodandnonceenc).unwrap().to_vec();
     let mut largebytestepped = 0;
     let mut g = NewVint::u32_from_bytes(&mut methodandnonceenc);
-    largebytestepped+=g as usize;
+    largebytestepped += g as usize;
     for i in 0..largebytestepped {
         methodandnonceenc.remove(0);
     }
     let mut finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
     let method = &methodandnonceenc[..finalen].to_vec();
     let method = method.to_vec();
-    largebytestepped+=finalen;
+    largebytestepped += finalen;
     for i in 0..largebytestepped {
         methodandnonceenc.remove(0);
     }
@@ -329,7 +380,11 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     let nonce = &methodandnonceenc[..finalen].to_vec();
     let nonce = nonce.to_vec();
     let method = String::from_utf8_lossy(&method).to_string();
-    let finalfile = EncryptedFile {method: method, nonce: nonce, ciphertext: ciphertext};
+    let finalfile = EncryptedFile {
+        method: method,
+        nonce: nonce,
+        ciphertext: ciphertext,
+    };
     //println!("Finalfile: {:?}",finalfile);
     return finalfile;
     /*
@@ -396,9 +451,10 @@ fn deserializedecexo(file: Vec<u8>) -> (String, Vec<u8>) {
         .unwrap()
         .try_into()
         .unwrap();
-    largebytestepped+=bytesstepped;
-    let filename = String::from_utf8_lossy(&file[largebytestepped..largebytestepped + finalen]).to_string();
-    largebytestepped+=finalen;
+    largebytestepped += bytesstepped;
+    let filename =
+        String::from_utf8_lossy(&file[largebytestepped..largebytestepped + finalen]).to_string();
+    largebytestepped += finalen;
     let file = &file[largebytestepped..file.len()].to_vec();
     let file = file.to_vec();
     return (filename, file);
