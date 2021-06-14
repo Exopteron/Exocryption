@@ -5,15 +5,17 @@ use argon2::{
     Argon2,
 };
 use integer_encoding::VarInt;
-use std::convert::TryFrom; // Or `Aes128GcmSiv`
-                           //use chacha20poly1305::aead::{Aead, NewAead};
-use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce}; // Or `XChaCha20Poly1305`
+use std::convert::TryFrom;
+use chacha20poly1305::{Key, XChaCha20Poly1305, XNonce};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fs::File;
 use std::io::Read;
 #[path = "weirdrng.rs"]
 mod weirdrng;
+#[path = "varint.rs"]
+mod varint;
+use varint::VarInt as NewVint;
 
 #[derive(Serialize, Deserialize)]
 struct EncryptedFile {
@@ -84,7 +86,8 @@ pub fn main(password: String, filename: String, ciphertouse: String) -> Vec<u8> 
             nonce: base64::encode(nonce),
             ciphertext: ciphertext,
         };
-        finalencryptedfile = encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
+        finalencryptedfile =
+            encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
     } else if ciphertouse.to_lowercase() == "AES-256-GCM-SIV".to_lowercase() {
         let key = AesKey::from_slice(b64.as_bytes());
         let originalnonce = noncebytes.clone();
@@ -103,7 +106,8 @@ pub fn main(password: String, filename: String, ciphertouse: String) -> Vec<u8> 
             nonce: base64::encode(originalnonce),
             ciphertext: ciphertext,
         };
-        finalencryptedfile = encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
+        finalencryptedfile =
+            encheaderexo(encryptedfile, String::from_utf8(password.to_vec()).unwrap());
     }
     return finalencryptedfile;
 }
@@ -156,15 +160,15 @@ fn encheaderexo(mut file: EncryptedFile, password: String) -> Vec<u8> {
     //println!("Key: {:?} IV: {:?}",&key,&iv);
     let cipher = Aes256Cbc::new_from_slices(&key, &iv).unwrap();
     let mut buffer = vec![0];
-    buffer.append(&mut makevarint(file.method.as_bytes().to_vec().len()));
+    buffer.append(&mut NewVint::new_as_bytes(file.method.as_bytes().to_vec().len() as u32));
     buffer.append(&mut file.method.as_bytes().to_vec());
-    buffer.append(&mut makevarint(base64::decode(&file.nonce).unwrap().len()));
+    buffer.append(&mut NewVint::new_as_bytes(base64::decode(&file.nonce).unwrap().len() as u32));
     buffer.append(&mut base64::decode(file.nonce).unwrap());
     let methodandnonceenc = &cipher.encrypt_vec(&mut buffer);
     let mut hmac = HmacSha3_256::new_from_slice(&sha3_256(key.to_vec())).unwrap();
     bytevec.append(&mut "\x00\x00\x0fExocryption2".as_bytes().to_vec());
     let mut superbytevec = vec![];
-    superbytevec.append(&mut makevarint(methodandnonceenc.len()));
+    superbytevec.append(&mut NewVint::new_as_bytes(methodandnonceenc.len() as u32));
     superbytevec.append(&mut methodandnonceenc.to_vec());
     superbytevec.append(&mut file.ciphertext);
     hmac.update(&superbytevec);

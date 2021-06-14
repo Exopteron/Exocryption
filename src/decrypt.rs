@@ -10,7 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fs::{File};
 use std::io::Read;
-
+#[path = "varint.rs"]
+mod varint;
+use varint::VarInt as NewVint;
 #[derive(Serialize, Deserialize, Debug)]
 struct EncryptedFile {
     method: String,
@@ -289,7 +291,7 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
     let b64 = hash.hash.unwrap();
     let key = b64.as_bytes().to_vec();
     let mut hmac = HmacSha3_256::new_from_slice(&sha3_256(key.clone())).unwrap();
-    let file = &file[48..];
+    let mut file = (&file[48..]).to_vec();
     //println!("Updating with: {:?}", file);
     hmac.update(&file);
     let hmac = hmac.finalize();
@@ -300,191 +302,31 @@ fn deserializeencheaderexo(mut file: Vec<u8>, password: String) -> EncryptedFile
         std::process::exit(1);
     }
     //println!("{}",header);
-    let mut fullbyte: Vec<String> = vec![];
-    let mut current = 0;
-    let mut bytesstepped = 0;
-    let mut largebytestepped = 0;
-    for _ in 0..5 {
-        bytesstepped += 1;
-        let currentbyte = format!("{:b}", file[current]);
-        let mut var = currentbyte.chars().rev().collect::<String>();
-        for _g in 0..9 - var.chars().count() {
-            if var.chars().count() < 8 {
-                var.push_str("0");
-            }
-        }
-        let currentbyte = var.chars().rev().collect::<String>();
-        //println!("current byte: {}",currentbyte);
-        if currentbyte.chars().nth(0).unwrap() == '1' {
-            if currentbyte.len() > 1 {
-                //println!("Pushing: {}",&currentbyte[1..currentbyte.len()]);
-                fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-                current += 1;
-            } else {
-                fullbyte.push(currentbyte);
-                current += 1;
-            }
-        } else {
-            //println!("Pushing B: {}",&currentbyte[1..currentbyte.len()]);
-            fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-            break;
-        }
-    }
-    fullbyte.reverse();
-    let mut fullbyte2 = "".to_owned();
-    //println!("Full byte: {:?}",fullbyte);
-    for i in 0..fullbyte.len() {
-        fullbyte2.push_str(&fullbyte[i]);
-    }
-
-    let finalen: usize = isize::from_str_radix(&fullbyte2, 2)
-        .unwrap()
-        .try_into()
-        .unwrap();
-    largebytestepped+=bytesstepped;
-    let methodandnonceenc = &file[largebytestepped..largebytestepped + finalen];
+    let mut finalen = NewVint::u32_from_bytes(&mut file);
+    let mut largebytestepped = 0 as usize;
+    let methodandnonceenc = &file[largebytestepped..largebytestepped + finalen as usize];
     let mut methodandnonceenc = methodandnonceenc.to_vec();
-    largebytestepped+=finalen;
+    largebytestepped+=finalen as usize;
     let ciphertext = &file[largebytestepped..].to_vec();
     let ciphertext = ciphertext.to_vec();
     //println!("Key: {:?} IV: {:?}",&key,&iv);
     let cipher = Aes256Cbc::new_from_slices(&key, &iv).unwrap();
-    let methodandnonceenc = cipher.decrypt(&mut methodandnonceenc).unwrap();
-    let mut fullbyte: Vec<String> = vec![];
-    let mut current = 0;
-    let mut bytesstepped = 0;
+    let mut methodandnonceenc = cipher.decrypt(&mut methodandnonceenc).unwrap().to_vec();
     let mut largebytestepped = 0;
-    for _ in 0..5 {
-        bytesstepped += 1;
-        let currentbyte = format!("{:b}", methodandnonceenc[current]);
-        let mut var = currentbyte.chars().rev().collect::<String>();
-        for _g in 0..9 - var.chars().count() {
-            if var.chars().count() < 8 {
-                var.push_str("0");
-            }
-        }
-        let currentbyte = var.chars().rev().collect::<String>();
-        //println!("current byte: {}",currentbyte);
-        if currentbyte.chars().nth(0).unwrap() == '1' {
-            if currentbyte.len() > 1 {
-                //println!("Pushing: {}",&currentbyte[1..currentbyte.len()]);
-                fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-                current += 1;
-            } else {
-                fullbyte.push(currentbyte);
-                current += 1;
-            }
-        } else {
-            //println!("Pushing B: {}",&currentbyte[1..currentbyte.len()]);
-            fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-            break;
-        }
+    let mut g = NewVint::u32_from_bytes(&mut methodandnonceenc);
+    largebytestepped+=g as usize;
+    for i in 0..largebytestepped {
+        methodandnonceenc.remove(0);
     }
-    fullbyte.reverse();
-    let mut fullbyte2 = "".to_owned();
-    //println!("Full byte: {:?}",fullbyte);
-    for i in 0..fullbyte.len() {
-        fullbyte2.push_str(&fullbyte[i]);
-    }
-
-    let finalen: usize = isize::from_str_radix(&fullbyte2, 2)
-        .unwrap()
-        .try_into()
-        .unwrap();
-    largebytestepped+=bytesstepped;
-    //let iv = &methodandnonceenc[largebytestepped..largebytestepped + finalen];
-    //println!("IV: {:?}",iv);
-    largebytestepped+=finalen;
-    let mut fullbyte: Vec<String> = vec![];
-    let mut current = largebytestepped;
-    let mut bytesstepped = 0;
-    for _ in 0..5 {
-        bytesstepped += 1;
-        let currentbyte = format!("{:b}", methodandnonceenc[current]);
-        let mut var = currentbyte.chars().rev().collect::<String>();
-        for _g in 0..9 - var.chars().count() {
-            if var.chars().count() < 8 {
-                var.push_str("0");
-            }
-        }
-        let currentbyte = var.chars().rev().collect::<String>();
-        //println!("current byte: {}",currentbyte);
-        if currentbyte.chars().nth(0).unwrap() == '1' {
-            if currentbyte.len() > 1 {
-                //println!("Pushing: {}",&currentbyte[1..currentbyte.len()]);
-                fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-                current += 1;
-            } else {
-                fullbyte.push(currentbyte);
-                current += 1;
-            }
-        } else {
-            //println!("Pushing B: {}",&currentbyte[1..currentbyte.len()]);
-            fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-            break;
-        }
-    }
-    fullbyte.reverse();
-    let mut fullbyte2 = "".to_owned();
-    //println!("Full byte: {:?}",fullbyte);
-    for i in 0..fullbyte.len() {
-        fullbyte2.push_str(&fullbyte[i]);
-    }
-
-    let finalen: usize = isize::from_str_radix(&fullbyte2, 2)
-        .unwrap()
-        .try_into()
-        .unwrap();
-    //println!("We skipped over {} bytes",bytesstepped);
-    //let noncelen = finalen.clone();
-    largebytestepped += bytesstepped;
-    let method = &methodandnonceenc[largebytestepped..largebytestepped + finalen].to_vec();
+    let mut finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
+    let method = &methodandnonceenc[..finalen].to_vec();
     let method = method.to_vec();
     largebytestepped+=finalen;
-    let mut fullbyte: Vec<String> = vec![];
-    let mut current = largebytestepped;
-    let mut bytesstepped = 0;
-    for _ in 0..5 {
-        bytesstepped += 1;
-        let currentbyte = format!("{:b}", methodandnonceenc[current]);
-        let mut var = currentbyte.chars().rev().collect::<String>();
-        for _g in 0..9 - var.chars().count() {
-            if var.chars().count() < 8 {
-                var.push_str("0");
-            }
-        }
-        let currentbyte = var.chars().rev().collect::<String>();
-        //println!("current byte: {}",currentbyte);
-        if currentbyte.chars().nth(0).unwrap() == '1' {
-            if currentbyte.len() > 1 {
-                //println!("Pushing: {}",&currentbyte[1..currentbyte.len()]);
-                fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-                current += 1;
-            } else {
-                fullbyte.push(currentbyte);
-                current += 1;
-            }
-        } else {
-            //println!("Pushing B: {}",&currentbyte[1..currentbyte.len()]);
-            fullbyte.push(currentbyte[1..currentbyte.len()].to_string());
-            break;
-        }
+    for i in 0..largebytestepped {
+        methodandnonceenc.remove(0);
     }
-    fullbyte.reverse();
-    let mut fullbyte2 = "".to_owned();
-    //println!("Full byte: {:?}",fullbyte);
-    for i in 0..fullbyte.len() {
-        fullbyte2.push_str(&fullbyte[i]);
-    }
-
-    let finalen: usize = isize::from_str_radix(&fullbyte2, 2)
-        .unwrap()
-        .try_into()
-        .unwrap();
-    //println!("We skipped over {} bytes",bytesstepped);
-    //let noncelen = finalen.clone();
-    largebytestepped += bytesstepped;
-    let nonce = &methodandnonceenc[largebytestepped..largebytestepped + finalen].to_vec();
+    let mut finalen = NewVint::u32_from_bytes(&mut methodandnonceenc) as usize;
+    let nonce = &methodandnonceenc[..finalen].to_vec();
     let nonce = nonce.to_vec();
     let method = String::from_utf8_lossy(&method).to_string();
     let finalfile = EncryptedFile {method: method, nonce: nonce, ciphertext: ciphertext};
