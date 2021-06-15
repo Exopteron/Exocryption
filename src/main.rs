@@ -137,10 +137,6 @@ fn main() {
     }
     let outputfile = matches.opt_str("o");
     let outfile;
-    if outputfile.is_none() && config.interactive == false {
-        eprintln!("[Exocryption] No output file provided.");
-        std::process::exit(1);
-    }
     if outputfile.is_none() {
         outfile = "".to_owned();
     } else {
@@ -196,18 +192,20 @@ fn main() {
             file2 = filefinal.split("/").collect();
         }
         filefinal = file2.last().unwrap().to_string();
-        println!(
-            "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
-            filefinal
-        );
-        let mut iostring = String::new();
-        std::io::stdin()
-            .read_line(&mut iostring)
-            .ok()
-            .expect("Couldn't read line");
-        let iostring = iostring.trim();
-        if iostring != "" {
-            filefinal = iostring.to_string();
+        if config.interactive == true {
+            println!(
+                "[Exocryption] Done! Would you like to save to {}? (Blank if yes, filename if no.)",
+                filefinal
+            );
+            let mut iostring = String::new();
+            std::io::stdin()
+                .read_line(&mut iostring)
+                .ok()
+                .expect("Couldn't read line");
+            let iostring = iostring.trim();
+            if iostring != "" {
+                filefinal = iostring.to_string();
+            }
         }
         println!("[Exocryption] Writing {} file to {}", mode, filefinal);
     } else {
