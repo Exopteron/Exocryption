@@ -151,7 +151,7 @@ fn main() {
         && cipher.to_lowercase() != "AES-256-GCM-SIV".to_lowercase()
         && cipher.to_lowercase() != "AES-256-GCM".to_lowercase()
     {
-        helpfn();
+        eprintln!("[Exocryption] Unknown cipher.");
         std::process::exit(1);
     }
     let mut finale;
