@@ -89,7 +89,6 @@ fn main() {
         println!("[Exocryption] We have detected you are running on Windows. You may have issues as this was built on Linux. Please report any issues to the github!");
     }
     if matches.opt_present("h") {
-        //println!("If you run with only the flag \"-g\", this will begin the key exchange process.");
         helpfn();
         std::process::exit(1);
     }
