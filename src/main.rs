@@ -79,7 +79,7 @@ fn main() {
     }
     println!("[Exocryption] Welcome to Exocryption v{}!", VERSION);
     if config.changelog == true {
-        println!("Updates from v0.0.3\n-- New AES-256-GCM mode of operation.\n-- Fixed security vulnerability where if a path was specified instead of a file name, the encrypted file would (by default) decrypt to the same location on the decryptor's PC.\n-- New configuration file, some extra settings such as changing the default cipher, if the changelog is printed at program start, if to use interactive mode etc.");
+        println!("Updates from v0.0.3\n-- New AES-256-GCM mode of operation.\n-- Fixed security vulnerability where if a path was specified instead of a file name, the encrypted file would (by default) decrypt to the same location on the decryptor's PC.\n-- New configuration file, some extra settings such as changing the default cipher, if the changelog is printed at program start, if to use interactive mode etc.\n");
         println!("Updates from v0.0.2c\n-- New encrypted file format (Exocryptionv2)\n-- HMAC of the entire file (including header), unlike before when only the encrypted contents were authenticated\n-- Header is encrypted with AES-256-CBC-HMAC always, which contains the encryption method and nonce.\n");
         println!("Updates from v0.0.2b\n-- Added output file flag -o\n");
         println!("Updates from v0.0.2\n-- Final optimizations, released to GitHub!\n");
