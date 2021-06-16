@@ -1,20 +1,20 @@
-Updates from v0.0.3
+Updates from v0.0.3 to v0.0.3a
 -- New AES-256-GCM mode of operation.
 -- Fixed security vulnerability where if a path was specified instead of a file name, the encrypted file would (by default) decrypt to the same location on the decryptor's PC.
 -- New configuration file, some extra settings such as changing the default cipher, if the changelog is printed at program start, if to use interactive mode etc.
 
-Updates from v0.0.2c
+Updates from v0.0.2c to v0.0.3
 -- New encrypted file format (Exocryptionv2)
 -- HMAC of the entire file (including header), unlike before when only the encrypted contents were authenticated
 -- Header is encrypted with AES-256-CBC-HMAC always, which contains the encryption method and nonce.
 
-Updates from v0.0.2b
+Updates from v0.0.2b to v0.0.2c
 -- Added output file flag -o
 
-Updates from v0.0.2
+Updates from v0.0.2 to v0.0.2a
 -- Final optimizations, released to GitHub!
 
-Updates from v0.0.1:
+Updates from v0.0.1 to v0.0.2
 -- New encoding format for smaller file sizes
 -- Better error handling
 -- More interactive interactive mode.
