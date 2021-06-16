@@ -1,5 +1,5 @@
 # Exocryption
-A simple file encryption program written in Rust using the Rust Crypto set of crates.
+A simple file encryption program written in Rust using the [Rust Crypto](https://github.com/RustCrypto) set of crates.
 
 ***(SECURITY HAZARD WARNING) I've made this myself, and I am not a cryptographer. I've tested it to the best of my ability and put everything I know into practice, but it's pretty easy for someone to make something they themselves can't break. Also, any branches other than "main" are very old and out of date. DO NOT USE THEM. And for all branches, USE AT YOUR OWN RISK!***
 
