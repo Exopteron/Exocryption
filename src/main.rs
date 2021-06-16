@@ -1,3 +1,4 @@
+use std::env;
 mod decrypt;
 mod encrypt;
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -5,10 +6,14 @@ const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 struct ConfigFile {
     changelog: bool,
     interactive: bool,
-    defaultcipher: String
+    defaultcipher: String,
 }
 fn main() {
-    let defaults: ConfigFile = ConfigFile {changelog: true, interactive: true, defaultcipher: "AES-256-GCM-SIV".to_string()};
+    let defaults: ConfigFile = ConfigFile {
+        changelog: true,
+        interactive: true,
+        defaultcipher: "AES-256-GCM-SIV".to_string(),
+    };
     let args: Vec<String> = std::env::args().collect();
     let mut opts = getopts::Options::new();
     let mut g = "";
@@ -29,23 +34,29 @@ fn main() {
     };
     let genconfig = matches.opt_str("genConfig");
     if genconfig.is_none() {
-
     } else {
         let genconfig = genconfig.unwrap();
-        let write = std::fs::write(genconfig.clone(), format!("# Default configuration file for Exocryption v0.0.3-a.\n\n{}",toml::to_string(&defaults).unwrap()));
+        let write = std::fs::write(
+            genconfig.clone(),
+            format!(
+                "# Default configuration file for Exocryption v0.0.3-a.\n\n{}",
+                toml::to_string(&defaults).unwrap()
+            ),
+        );
         if write.is_err() == true {
-            println!("[Exocryption] Couldn't write to {}.", genconfig);
+            println!("[Exocryption] Couldn't write to \"{}\".", genconfig);
             std::process::exit(1);
         } else {
-            println!("[Exocryption] Writing config to {}", genconfig);
-            std::process::exit(0);   
+            println!("[Exocryption] Writing configuration file to {}", genconfig);
+            std::process::exit(0);
         }
     }
     let config: ConfigFile;
     let userfile = matches.opt_str("config");
+    let config_enviroment = env::var("EXOCRYPTION_CONFIG");
     if userfile.is_none() {
         config = defaults;
-    } else {
+    } else if userfile.is_some() {
         let configfile = std::fs::read_to_string(userfile.unwrap()).unwrap();
         let configmaybe = toml::from_str::<ConfigFile>(&configfile);
         if configmaybe.is_err() == true {
@@ -54,6 +65,17 @@ fn main() {
         } else {
             config = configmaybe.unwrap();
         }
+    } else if config_enviroment.is_err() == false {
+        let configfile = std::fs::read_to_string(config_enviroment.unwrap()).unwrap();
+        let configmaybe = toml::from_str::<ConfigFile>(&configfile);
+        if configmaybe.is_err() == true {
+            println!("[Exocryption] Invalid configuration file.");
+            std::process::exit(1);
+        } else {                        
+            config = configmaybe.unwrap();
+        }
+    } else {
+        config = defaults;
     }
     println!("[Exocryption] Welcome to Exocryption v{}!", VERSION);
     if config.changelog == true {
@@ -61,7 +83,7 @@ fn main() {
         println!("Updates from v0.0.2c\n-- New encrypted file format (Exocryptionv2)\n-- HMAC of the entire file (including header), unlike before when only the encrypted contents were authenticated\n-- Header is encrypted with AES-256-CBC-HMAC always, which contains the encryption method and nonce.\n");
         println!("Updates from v0.0.2b\n-- Added output file flag -o\n");
         println!("Updates from v0.0.2\n-- Final optimizations, released to GitHub!\n");
-        println!("Updates from v0.0.1:\n-- New encoding format for smaller file sizes\n-- Better error handling\n-- More interactive interactive mode.\n");   
+        println!("Updates from v0.0.1:\n-- New encoding format for smaller file sizes\n-- Better error handling\n-- More interactive interactive mode.\n");
     }
     if cfg!(target_os = "windows") {
         println!("[Exocryption] We have detected you are running on Windows. You may have issues as this was built on Linux. Please report any issues to the github!");
@@ -145,7 +167,7 @@ fn main() {
     let cipher = matches.opt_str("c");
     let cipher = match cipher {
         Some(x) => x,
-        None => config.defaultcipher
+        None => config.defaultcipher,
     };
     if cipher.to_lowercase() != "XChaCha20-Poly1305".to_lowercase()
         && cipher.to_lowercase() != "AES-256-GCM-SIV".to_lowercase()
