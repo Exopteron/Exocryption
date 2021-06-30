@@ -56,7 +56,8 @@ pub fn main(password: String, filename: String, mut ciphertouse: String) -> (Vec
         println!("[Exocryption] Detected as Exocryption Legacy format.");
         encryptedfile = deserializeexo(buffer);
     } else {
-        println!("[Exocryption] Unknown format.");
+        eprintln!("[Exocryption] Unknown format.");
+        std::process::exit(1);
     }
     let nonce = encryptedfile.nonce;
     if encryptedfile.method.contains("AES256GCMSIV") {
