@@ -6,6 +6,7 @@ mod ciphers;
 use keyderivation::argon2;
 use std::io::Read;
 use std::env;
+use ::hmac::Mac;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mut opts = getopts::Options::new();
@@ -48,7 +49,7 @@ fn main() {
         let (headerkey, headermackey, messagekey, messagemackey) = keyderivation::hkdf::rk_to_mk_hk(key.clone());
         let mut msg = encryption::aes::cbc::cbc_encrypt(filebytes.clone(), messagekey, vec![0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
         let mut mac = mac::hmac::perform_hmac_sha256(messagemackey, msg.clone());
-        let mut serialized = serializer::serialize_hmac_cbc(msg, vec![0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], mac, headerkey, headermackey, vec![0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+        let mut serialized = serializer::serialize_hmac_cbc(msg, vec![0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], mac.finalize().into_bytes().to_vec(), headerkey, headermackey, vec![0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
         let serialized = ciphers::aes_256_cbc_hmac_sha256_encrypt(key, filebytes); 
         std::fs::write("test.txt.exo", serialized);
     }

@@ -7,6 +7,7 @@ use std::io::Read;
 pub struct VarInt {
     pub number: u32,
 }
+#[allow(dead_code)]
 impl VarInt {
     #[allow(dead_code)]
     pub fn new(number: u32) -> VarInt {
@@ -25,31 +26,31 @@ impl VarInt {
         let vint = VarInt::from_bytes(&mut input);
         return vint;
     }
-    pub fn new_u32_from_bytes(mut input: &mut dyn std::io::Read) -> Result<VarInt, String> {
-        let vint = VarInt::new_from_bytes(&mut input);
+    pub fn new_u32_from_bytes(input: &mut dyn std::io::Read) -> Result<VarInt, String> {
+        let vint = VarInt::new_from_bytes(input);
         return vint;
     }
-/*     pub fn enc_new_u32_from_bytes(mut input: &mut dyn std::io::Read, mut cipher: &mut AesCfb8) -> Result<VarInt, String> {
+/*     pub fn enc_new_u32_from_bytes(input: &mut dyn std::io::Read, mut cipher: &mut AesCfb8) -> Result<VarInt, String> {
         let vint = VarInt::enc_new_from_bytes(&mut input, cipher);
         return vint;
     } */
-    pub fn read_string(mut input: &mut dyn std::io::Read) -> String {
+    pub fn read_string(input: &mut dyn std::io::Read) -> String {
         let strlen = VarInt::new_u32_from_bytes(input).unwrap().number;
         let mut string = vec![0; strlen as usize];
-        input.read_exact(&mut string);
+        input.read_exact(&mut string).expect("String err!");
         let string = String::from_utf8_lossy(&string).to_string();
         return string;
     }
-    pub fn read_varint_prefixed_bytearray(mut input: &mut dyn std::io::Read) -> Vec<u8> {
+    pub fn read_varint_prefixed_bytearray(input: &mut dyn std::io::Read) -> Vec<u8> {
         let strlen = VarInt::new_u32_from_bytes(input).unwrap().number;
         let mut string = vec![0; strlen as usize];
         input.read_exact(&mut string).unwrap();
 /*         let string = String::from_utf8_lossy(&string).to_string(); */
         return string;
     }
-    pub fn read_unsigned_short(mut input: &mut dyn std::io::Read) -> usize {
+    pub fn read_unsigned_short(input: &mut dyn std::io::Read) -> usize {
         let mut string = vec![0; 2];
-        input.read_exact(&mut string);
+        input.read_exact(&mut string).expect("Not enough bytes!");
         let mut numarray = [0; 2];
         for i in 0..2 {
             numarray[i] = string[i];
@@ -58,9 +59,9 @@ impl VarInt {
         let num: usize = num as usize;
         return num;
     }
-    pub fn read_u128(mut input: &mut dyn std::io::Read) -> u128 {
+    pub fn read_u128(input: &mut dyn std::io::Read) -> u128 {
         let mut string = vec![0; 16];
-        input.read_exact(&mut string);
+        input.read_exact(&mut string).expect("Not enough bytes!");
         let mut numarray = [0; 16];
         for i in 0..16 {
             numarray[i] = string[i];
@@ -69,9 +70,9 @@ impl VarInt {
         let num: u128 = num as u128;
         return num;
     }
-    pub fn read_short(mut input: &mut dyn std::io::Read) -> isize {
+    pub fn read_short(input: &mut dyn std::io::Read) -> isize {
         let mut string = vec![0; 2];
-        input.read_exact(&mut string);
+        input.read_exact(&mut string).expect("Not enough bytes");
         let mut numarray = [0; 2];
         for i in 0..2 {
             numarray[i] = string[i];
@@ -80,9 +81,9 @@ impl VarInt {
         let num: isize = num as isize;
         return num;
     }
-    pub fn read_int(mut input: &mut dyn std::io::Read) -> isize {
+    pub fn read_int(input: &mut dyn std::io::Read) -> isize {
         let mut string = vec![0; 4];
-        input.read_exact(&mut string);
+        input.read_exact(&mut string).unwrap();
         let mut numarray = [0; 4];
         for i in 0..4 {
             numarray[i] = string[i];
@@ -91,15 +92,15 @@ impl VarInt {
         let num: isize = num as isize;
         return num;
     }
-    pub fn read_byte(mut input: &mut dyn std::io::Read) -> u8 {
+    pub fn read_byte(input: &mut dyn std::io::Read) -> u8 {
         let mut string = vec![0; 1];
-        input.read_exact(&mut string);
+        input.read_exact(&mut string).unwrap();
         return string[0];
     }
     pub fn write_short(number: i16) -> Vec<u8> {
         let mut bytes = number.to_be_bytes().to_vec();
         if bytes.len() < 2 {
-            for i in 0..2 - bytes.len() {
+            for _ in 0..2 - bytes.len() {
                 bytes.reverse();
                 bytes.push(0x00);
                 bytes.reverse();
@@ -110,7 +111,7 @@ impl VarInt {
     pub fn write_int(number: i32) -> Vec<u8> {
         let mut bytes = number.to_be_bytes().to_vec();
         if bytes.len() < 4 {
-            for i in 0..4 - bytes.len() {
+            for _ in 0..4 - bytes.len() {
                 bytes.reverse();
                 bytes.push(0x00);
                 bytes.reverse();
@@ -121,7 +122,7 @@ impl VarInt {
     pub fn write_unsigned_short(number: u16) -> Vec<u8> {
         let mut bytes = number.to_be_bytes().to_vec();
         if bytes.len() < 2 {
-            for i in 0..2 - bytes.len() {
+            for _ in 0..2 - bytes.len() {
                 bytes.reverse();
                 bytes.push(0x00);
                 bytes.reverse();
@@ -132,7 +133,7 @@ impl VarInt {
     pub fn write_u128(number: u128) -> Vec<u8> {
         let mut bytes = number.to_be_bytes().to_vec();
         if bytes.len() < 16 {
-            for i in 0..16 - bytes.len() {
+            for _ in 0..16 - bytes.len() {
                 bytes.reverse();
                 bytes.push(0x00);
                 bytes.reverse();
@@ -140,7 +141,7 @@ impl VarInt {
         }
         return bytes;
     }
-/*     pub fn enc_read_packet(mut input: &mut dyn std::io::Read, mut cipher: &mut AesCfb8) -> Result<(usize, Vec<u8>), String> {
+/*     pub fn enc_read_packet(input: &mut dyn std::io::Read, mut cipher: &mut AesCfb8) -> Result<(usize, Vec<u8>), String> {
         let length = VarInt::enc_new_u32_from_bytes(input, cipher);
         if length.is_err() {
             return Err("Failed to read.".to_string());
@@ -152,18 +153,18 @@ impl VarInt {
         let packetid = VarInt::u32_from_bytes(&mut packet).unwrap().number as usize;
         return Ok((packetid, packet));
     } */
-    pub fn read_packet(mut input: &mut dyn std::io::Read) -> Result<(usize, Vec<u8>), String> {
+    pub fn read_packet(input: &mut dyn std::io::Read) -> Result<(usize, Vec<u8>), String> {
         let length = VarInt::new_u32_from_bytes(input);
         if length.is_err() {
             return Err("Failed to read.".to_string())
         }
         let length = length.unwrap().number;
         let mut packet = vec![0; length as usize];
-        input.read_exact(&mut packet);
+        input.read_exact(&mut packet).unwrap();
         let packetid = VarInt::u32_from_bytes(&mut packet).unwrap().number as usize;
         return Ok((packetid, packet));
     }
-    pub fn write_pluginmessage_packet(mut input: Vec<u8>, channel: &str) -> Vec<u8> {
+    pub fn write_pluginmessage_packet(input: Vec<u8>, channel: &str) -> Vec<u8> {
         let mut packet = vec![];
         packet.append(&mut VarInt::write_string(channel.to_string()));
         packet.append(&mut VarInt::write_short(input.len() as i16));
@@ -362,7 +363,7 @@ impl VarInt {
         let mut fullbyte: Vec<String> = vec![];
         let mut current = 0;
         let mut bytesstepped = 0;
-        let mut largebytestepped = 0;
+        //let largebytestepped: usize;
         for _ in 0..5 {
             bytesstepped += 1;
             let currentbyte = format!("{:b}", input[current]);
@@ -406,7 +407,7 @@ impl VarInt {
             .unwrap()
             .try_into()
             .unwrap();
-        largebytestepped += bytesstepped;
+        //largebytestepped += bytesstepped;
         //largebytestepped+=finalen;
         return Ok(VarInt { number: finalen });
     }
